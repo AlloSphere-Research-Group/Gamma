@@ -21,11 +21,14 @@ The source code can either be built into a library or directly compiled from sou
 ----------------------------------------
 2.1 Building a Library
 ----------------------------------------
+Building requires CMake, which can be downloaded from:
+http://www.cmake.org/
+
 ........................................
 Make (Linux, OS X)
 ........................................
 In most cases, simply running
-
+	cmake
 	make
 
 will build the library with automatically detected platform settings. See Makefile.config for other build options.
@@ -44,9 +47,10 @@ Binaries are located in ./build/release or ./build/debug depending on the build 
 ........................................
 Xcode (OS X)
 ........................................
-1) Open project/xcode/gamma.xcodeproj
-2) Build libgamma{.a, .dylib}. The library will be in project build folder.
-
+Cmake can generate an XCode project with the command:
+	cmake -G Xcode
+You can then use the resulting project in XCode.
+For convenience, an Xcode project can be found in the project/xcode directory.
 
 ----------------------------------------
 2.2 Compiling Direct From Source
