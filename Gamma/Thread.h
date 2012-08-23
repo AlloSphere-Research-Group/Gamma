@@ -26,7 +26,7 @@
 */
 /***************************************************/
 
-#define GAM_USE_PTHREAD		(defined (__APPLE__) || defined (OSX) || defined (__LINUX__) || defined (__UNIX__))
+#define GAM_USE_PTHREAD		(defined (__APPLE__) || defined (OSX) || defined (__linux__) || defined (__LINUX__) || defined (__UNIX__))
 #define GAM_USE_THREADEX	(defined(WIN32) || defined(WIN64))
 
 #if GAM_USE_PTHREAD
