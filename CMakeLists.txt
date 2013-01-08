@@ -41,7 +41,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
 # 	SET (CMAKE_OSX_ARCHITECTURES "i386;x86_64;")
 # ENDIF()
 
-# ------------
+
 # Dependencies
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH}) 
@@ -58,6 +58,10 @@ foreach(dir ${EXAMPLE_DIRS})
     get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
     add_executable(${dir}_${EXAMPLE_NAME} ${example})
     target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma portaudio sndfile)
+    if (apple)
+      find_library(AUDIOUNIT_FM AudioUnit)
+      target_link_libraries(${dir}_${EXAMPLE_NAME} ${AUDIOUNIT_FM})
+    endif()
   endforeach(example)
 endforeach(dir) 
 
