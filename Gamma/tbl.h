@@ -10,7 +10,6 @@
 #include "Gamma/scl.h"
 #include "Gamma/Constants.h"
 
-#define TEM template<class T>
 #define LOOP(n,s) for(uint32_t i=0; i<n; i+=s)
 
 /// Main namespace
@@ -57,20 +56,20 @@ inline static const char * toString(gam::WindowType v){
 
 /// Add sine wave to array
 
-/// @param[out] dst		destination array
-/// @param[in] len		length of array
-/// @param[in] cycles	number of cycles of sine wave, must be integer for periodic waves
-/// @param[in] amp		amplitude of sine wave
-/// @param[in] phs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] len		length of array
+/// \param[in] cycles	number of cycles of sine wave, must be integer for periodic waves
+/// \param[in] amp		amplitude of sine wave
+/// \param[in] phs		phase of sine wave, in [0,1]
 template <class T>
 void addSine(T * dst, uint32_t len, double cycles=1, double amp=1, double phs=0);
 
 /// Add sine wave to array
 
-/// @param[out] dst		destination array
-/// @param[in] cycles	number of cycles of sine wave, must be integer for periodic waves
-/// @param[in] amp		amplitude of sine wave
-/// @param[in] phs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] cycles	number of cycles of sine wave, must be integer for periodic waves
+/// \param[in] amp		amplitude of sine wave
+/// \param[in] phs		phase of sine wave, in [0,1]
 template <class T, class Alloc, template<class,class> class ArrayType>
 void inline addSine(
 	ArrayType<T,Alloc>& dst,
@@ -82,13 +81,13 @@ void inline addSine(
 
 /// Add harmonic series to array with specified amplitudes
 
-/// @param[out] dst		destination array
-/// @param[in] len		length of destination array
-/// @param[in] amps		amplitudes of harmonic series, size must be numh
-/// @param[in] numh		total number of harmonics
-/// @param[in] hmul		harmonic number multiplication factor
-/// @param[in] hshf		harmonic number shift amount
-/// @param[in] hphs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] len		length of destination array
+/// \param[in] amps		amplitudes of harmonic series, size must be numh
+/// \param[in] numh		total number of harmonics
+/// \param[in] hmul		harmonic number multiplication factor
+/// \param[in] hshf		harmonic number shift amount
+/// \param[in] hphs		phase of sine wave, in [0,1]
 template <class T, class A>
 void inline addSines(
 	T * dst, uint32_t len, const A * amps, int numh,
@@ -101,12 +100,12 @@ void inline addSines(
 
 /// Add harmonic series to array with specified amplitudes
 
-/// @param[out] dst		destination array
-/// @param[in] amps		amplitudes of harmonic series, size must be numh
-/// @param[in] numh		total number of harmonics
-/// @param[in] hmul		harmonic number multiplication factor
-/// @param[in] hshf		harmonic number shift amount
-/// @param[in] hphs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] amps		amplitudes of harmonic series, size must be numh
+/// \param[in] numh		total number of harmonics
+/// \param[in] hmul		harmonic number multiplication factor
+/// \param[in] hshf		harmonic number shift amount
+/// \param[in] hphs		phase of sine wave, in [0,1]
 template <class T, class Alloc, template<class,class> class ArrayType, class A>
 void inline addSines(
 	ArrayType<T,Alloc>& dst, const A * amps, int numh,
@@ -118,12 +117,12 @@ void inline addSines(
 
 /// Add harmonics to array with specified amplitudes and harmonic numbers
 
-/// @param[out] dst		destination array
-/// @param[in] len		length of destination array
-/// @param[in] amps		harmonic amplitudes of series, size must be numh
-/// @param[in] cycs		harmonic numbers of series, size must be numh
-/// @param[in] numh		total number of harmonics
-/// @param[in] hphs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] len		length of destination array
+/// \param[in] amps		harmonic amplitudes of series, size must be numh
+/// \param[in] cycs		harmonic numbers of series, size must be numh
+/// \param[in] numh		total number of harmonics
+/// \param[in] hphs		phase of sine wave, in [0,1]
 template <class T, class A, class C>
 void addSines(
 	T * dst, uint32_t len, const A * amps, const C * cycs, int numh, double hphs=0
@@ -133,11 +132,11 @@ void addSines(
 
 /// Add harmonics to array with specified amplitudes and harmonic numbers
 
-/// @param[out] dst		destination array
-/// @param[in] amps		harmonic amplitudes of series, size must be numh
-/// @param[in] cycs		harmonic numbers of series, size must be numh
-/// @param[in] numh		total number of harmonics
-/// @param[in] hphs		phase of sine wave, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] amps		harmonic amplitudes of series, size must be numh
+/// \param[in] cycs		harmonic numbers of series, size must be numh
+/// \param[in] numh		total number of harmonics
+/// \param[in] hphs		phase of sine wave, in [0,1]
 template <class T, class Alloc, template<class,class> class ArrayType, class A, class C>
 void inline addSines(
 	ArrayType<T,Alloc>& dst, const A * amps, const C * cycs, int numh, double hphs=0)
@@ -149,14 +148,14 @@ void inline addSines(
 /// Add sine waves to array using inverse power law for amplitudes
 
 /// \tparam InvPower	amplitudes will be set to 1 / h^InvPower
-/// @param[out] dst		destination array
-/// @param[in] len		length of destination array
-/// @param[in] numh		total number of harmonics
-/// @param[in] hmul		harmonic number multiplication factor
-/// @param[in] hshf		harmonic number shift amount
-/// @param[in] amp		overall amplitude scaling factor
-/// @param[in] hphs		phase of (sine) harmonics, in [0,1]
-/// @param[in] wphs		phase of composite waveform, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] len		length of destination array
+/// \param[in] numh		total number of harmonics
+/// \param[in] hmul		harmonic number multiplication factor
+/// \param[in] hshf		harmonic number shift amount
+/// \param[in] amp		overall amplitude scaling factor
+/// \param[in] hphs		phase of (sine) harmonics, in [0,1]
+/// \param[in] wphs		phase of composite waveform, in [0,1]
 template <int InvPower, class T>
 void addSinesPow(
 	T * dst, uint32_t len, int numh,
@@ -166,13 +165,13 @@ void addSinesPow(
 /// Add sine waves to array using inverse power law for amplitudes
 
 /// \tparam InvPower	amplitudes will be set to 1 / h^InvPower
-/// @param[out] dst		destination array
-/// @param[in] numh		total number of harmonics
-/// @param[in] hmul		harmonic number multiplication factor
-/// @param[in] hshf		harmonic number shift amount
-/// @param[in] amp		overall amplitude scaling factor
-/// @param[in] hphs		phase of (sine) harmonics, in [0,1]
-/// @param[in] wphs		phase of composite waveform, in [0,1]
+/// \param[out] dst		destination array
+/// \param[in] numh		total number of harmonics
+/// \param[in] hmul		harmonic number multiplication factor
+/// \param[in] hshf		harmonic number shift amount
+/// \param[in] amp		overall amplitude scaling factor
+/// \param[in] hphs		phase of (sine) harmonics, in [0,1]
+/// \param[in] wphs		phase of composite waveform, in [0,1]
 template <int InvPower, class T, class Alloc, template<class,class> class ArrayType>
 inline void addSinesPow(
 	ArrayType<T,Alloc>& dst, int numh,
@@ -186,13 +185,13 @@ inline void addSinesPow(
 
 /// The produced waveforms are not normalized; the fundamental always has a 
 /// unit amplitude.
-/// @param[out] dst		destination array
-/// @param[in] len		length of destination array
-/// @param[in] type		waveform type
-/// @param[in] numh		total number of harmonics
-/// @param[in] amp		amplitude of waveform
-/// @param[in] phs		phase of waveform, in [0,1]
-/// @param[in] hshf		harmonic number shift amount
+/// \param[out] dst		destination array
+/// \param[in] len		length of destination array
+/// \param[in] type		waveform type
+/// \param[in] numh		total number of harmonics
+/// \param[in] amp		amplitude of waveform
+/// \param[in] phs		phase of waveform, in [0,1]
+/// \param[in] hshf		harmonic number shift amount
 template <class T>
 void addWave(
 	T * dst, uint32_t len, gam::WaveformType type,
@@ -203,12 +202,12 @@ void addWave(
 
 /// The produced waveforms are not normalized; the fundamental always has a 
 /// unit amplitude.
-/// @param[out] dst		destination array
-/// @param[in] type		waveform type
-/// @param[in] numh		total number of harmonics
-/// @param[in] amp		amplitude of waveform
-/// @param[in] phs		phase of waveform, in [0,1]
-/// @param[in] hshf		harmonic number shift amount
+/// \param[out] dst		destination array
+/// \param[in] type		waveform type
+/// \param[in] numh		total number of harmonics
+/// \param[in] amp		amplitude of waveform
+/// \param[in] phs		phase of waveform, in [0,1]
+/// \param[in] hshf		harmonic number shift amount
 template <class T, class Alloc, template<class,class> class ArrayType>
 void inline addWave(
 	ArrayType<T,Alloc>& dst, gam::WaveformType type,
@@ -228,55 +227,80 @@ namespace tbl{
 
 
 /// Fills array with one period of a cosine wave.
-TEM void cosine(T * dst, uint32_t len);
+template<class T>
+void cosine(T * dst, uint32_t len);
 
 /// Fills array with one period of a sine wave.
-TEM void sine(T * dst, uint32_t len);
+template<class T>
+void sine(T * dst, uint32_t len);
 
 /// Fills array with arbitrary phase and length sinusoid.
-TEM void sinusoid(T * dst, uint32_t len, double phase, double periods);
+template<class T>
+void sinusoid(T * dst, uint32_t len, double phase, double periods);
 
 /// Sums band-limited impulse wave into multi-wavetable array
 
 /// The waveform includes harmonics in the range [hrmLo, hrmHi].
 /// The amplitude of the waveform will not be normalized.
 /// The ideal waveform shape is [4, -1, 0, -1, 0, -1, 0, -1 ]
-TEM void multiImpulse(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
+template<class T>
+void multiImpulse(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
 
 /// Sums band-limited saw wave into multi-wavetable array
 
 /// The waveform includes harmonics in the range [hrmLo, hrmHi].
 /// The ideal waveform shape is [1, 0.75, 0.5, 0.25, 0, -0.25, -0.5, -0.75]
-TEM void multiSaw(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
+template<class T>
+void multiSaw(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
 
 /// Sums band-limited square wave into multi-wavetable array
 
 /// The waveform includes harmonics in the range [hrmLo, hrmHi].
 ///	The ideal waveform shape is [ 1, 1, 1, 1, -1, -1, -1, -1].
-TEM void multiSquare(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
+template<class T>
+void multiSquare(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
 
 /// Sums band-limited triangle wave into multi-wavetable array
 	
 /// The waveform includes harmonics in the range [hrmLo, hrmHi].
 ///	The ideal waveform shape is [ 0, 0.5, 1, 0.5, 0, -0.5, -1, -0.5].
-TEM void multiTriangle(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
+template<class T>
+void multiTriangle(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi);
 
 /// Create multi-wavetable
-TEM void multiWave(T * dst, uint32_t len, uint32_t order, void (* func)(T *, uint32_t, uint32_t, uint32_t));
+template<class T>
+void multiWave(T * dst, uint32_t len, uint32_t order, void (* func)(T *, uint32_t, uint32_t, uint32_t));
 
 /// Returns maximum number of harmonics that will fit in array.
 inline uint32_t maxHarmonics(uint32_t len){ return len>>1; }
 
 /// Fills array with specified window type
-TEM void window			(T * dst, uint32_t len, WindowType type);
-TEM void bartlett		(T * dst, uint32_t len); ///< Fills array with Bartlett window
-TEM void blackman		(T * dst, uint32_t len); ///< Fills array with Blackman window
-TEM void blackmanHarris	(T * dst, uint32_t len); ///< Fills array with Blackman-Harris window
-TEM void hamming		(T * dst, uint32_t len); ///< Fills array with Hamming window
-TEM void hann			(T * dst, uint32_t len); ///< Fills array with von Hann window
-TEM void welch			(T * dst, uint32_t len); ///< Fills array with Welch window
-TEM void rectangle		(T * dst, uint32_t len); ///< Fills array with Rectangle window
-TEM void nyquist		(T * dst, uint32_t len, uint32_t str=1); ///< Fills array with Nyquist window
+template<class T>
+void window			(T * dst, uint32_t len, WindowType type);
+
+template<class T>
+void bartlett		(T * dst, uint32_t len); ///< Fills array with Bartlett window
+    
+template<class T>
+void blackman		(T * dst, uint32_t len); ///< Fills array with Blackman window
+    
+template<class T>
+void blackmanHarris	(T * dst, uint32_t len); ///< Fills array with Blackman-Harris window
+    
+template<class T>
+void hamming		(T * dst, uint32_t len); ///< Fills array with Hamming window
+    
+template<class T>
+void hann			(T * dst, uint32_t len); ///< Fills array with von Hann window
+    
+template<class T>
+void welch			(T * dst, uint32_t len); ///< Fills array with Welch window
+    
+template<class T>
+void rectangle		(T * dst, uint32_t len); ///< Fills array with Rectangle window
+    
+template<class T>
+void nyquist		(T * dst, uint32_t len, uint32_t str=1); ///< Fills array with Nyquist window
 
 
 // Return value from a table with the first half of a dq-symmetric 
@@ -319,7 +343,8 @@ float phaseIncFactor(double framesPerSec);
 
 // Implementation_______________________________________________________________
 
-TEM void cosine(T * dst, uint32_t len){
+template<class T>
+void cosine(T * dst, uint32_t len){
 	double inc = M_2PI / (double)len;
 	double phs = inc;
 	len >>= 1;
@@ -338,7 +363,8 @@ TEM void cosine(T * dst, uint32_t len){
 	}
 }
 
-TEM void sine(T * dst, uint32_t len){
+template<class T>
+void sine(T * dst, uint32_t len){
 	double inc = M_2PI / (double)len;
 	double phs = inc;
 	len >>= 1;
@@ -358,7 +384,8 @@ TEM void sine(T * dst, uint32_t len){
 }
 
 // VERY accurate, but not so fast
-TEM void sinusoid(T * dst, uint32_t len, double phase, double periods){
+template<class T>
+void sinusoid(T * dst, uint32_t len, double phase, double periods){
 	double inc = M_2PI * periods / len;
 	for(uint32_t i=0; i<len; ++i){
 		*dst++ = sin(inc * i + phase);
@@ -366,7 +393,8 @@ TEM void sinusoid(T * dst, uint32_t len, double phase, double periods){
 }
 
 
-TEM void multiImpulse(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
+template<class T>
+void multiImpulse(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 	double inc = M_2PI / (double)len;
 	uint32_t hLen = len >> 1;
 	
@@ -386,7 +414,8 @@ TEM void multiImpulse(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 	mem::reflectRight(dst + 1, len - 1);
 }
 
-TEM void multiSaw(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
+template<class T>
+void multiSaw(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 
 	static const double sawFactor = 2.0 / M_PI;
 	double inc = M_2PI / (double)len;
@@ -412,7 +441,8 @@ TEM void multiSaw(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 	arr::mirror_dp(dst, len-1);	
 }
 
-TEM void multiSquare(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
+template<class T>
+void multiSquare(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 
 	static const double sqrFactor = 4.0 / M_PI;
 	double inc = M_2PI / (double)len;
@@ -444,7 +474,8 @@ TEM void multiSquare(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 }
 
 
-TEM void multiTriangle(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
+template<class T>
+void multiTriangle(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 
 	static const double triFactor = 8.0 / (M_PI * M_PI);
 	double inc = M_2PI / (double)len;
@@ -484,7 +515,8 @@ TEM void multiTriangle(T * dst, uint32_t len, uint32_t hrmLo, uint32_t hrmHi){
 	5	8
 	9	16	
 */
-TEM void multiWave(T * dst, uint32_t len, uint32_t order, void (* func)(T *, uint32_t, uint32_t, uint32_t)){
+template<class T>
+void multiWave(T * dst, uint32_t len, uint32_t order, void (* func)(T *, uint32_t, uint32_t, uint32_t)){
 
 	dst += len * (order - 1);
 
@@ -505,7 +537,8 @@ TEM void multiWave(T * dst, uint32_t len, uint32_t order, void (* func)(T *, uin
 	}
 }
 
-TEM void window(T * dst, uint32_t len, WindowType type){
+template<class T>
+void window(T * dst, uint32_t len, WindowType type){
 	switch(type){
 		case BARTLETT:			bartlett(dst, len);			break;
 		case BLACKMAN:			blackman(dst, len);			break;
@@ -530,20 +563,32 @@ TEM void window(T * dst, uint32_t len, WindowType type){
 		*dst2-- = val;\
 	}
 	
-TEM void bartlett      (T * dst, uint32_t len){ SYM_WIN(2.   , 0., phs) }
-TEM void blackman      (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::blackman(phs)) }
-TEM void blackmanHarris(T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::blackmanHarris(phs)) }
-TEM void hamming       (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::hamming(phs)) }
-TEM void hann          (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::hann(phs)) }
-TEM void welch         (T * dst, uint32_t len){ SYM_WIN(2.   ,-1., scl::welch(phs)) }
+template<class T>
+void bartlett      (T * dst, uint32_t len){ SYM_WIN(2.   , 0., phs) }
+    
+template<class T>
+void blackman      (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::blackman(phs)) }
+    
+template<class T>
+void blackmanHarris(T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::blackmanHarris(phs)) }
+    
+template<class T>
+void hamming       (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::hamming(phs)) }
+    
+template<class T>
+void hann          (T * dst, uint32_t len){ SYM_WIN(M_2PI, 0., scl::hann(phs)) }
+    
+template<class T>
+void welch         (T * dst, uint32_t len){ SYM_WIN(2.   ,-1., scl::welch(phs)) }
 
 #undef SYM_WIN
 
-TEM void rectangle(T * dst, uint32_t len){
+template<class T> void rectangle(T * dst, uint32_t len){
 	for(uint32_t i=0; i<len; ++i) dst[i]=T(1);
 }
 
-TEM void nyquist(T * dst, uint32_t len, uint32_t str){
+template<class T>
+void nyquist(T * dst, uint32_t len, uint32_t str){
 	LOOP(len, str*2){
 		dst[(i+0)*str] = T( 1);
 		dst[(i+1)*str] = T(-1);
@@ -576,7 +621,7 @@ inline float atQ(const float * src, uint32_t fbits, uint32_t phs){
 // i: 0 1 2 3 4 5 6 7
 // o: 0 1 2 3 0 1 2 3
 
-//TEM inline T at_dq(const T * src, uint32_t len_2, uint32_t i){
+//template<class T> inline T at_dq(const T * src, uint32_t len_2, uint32_t i){
 //	return i < len_2 ? src[i] : -src[i - len_2];
 //}
 
@@ -660,7 +705,6 @@ void addWave(
 
 } // gam::
 
-#undef TEM
 #undef LOOP
 
 #endif

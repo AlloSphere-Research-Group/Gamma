@@ -4,6 +4,15 @@
 /*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information */
 
+
+/// \defgroup ipl Interpolation
+
+/// Gamma supports several interpolation strategies.  These can be used, for example,
+/// to make a delay line whose delay amount is a non-integer number of samples.
+/// Julius Smith's <A HREF="https://ccrma.stanford.edu/~jos/pasp/Delay_Line_Interpolation.html">
+/// Delay-Line Interpolation page</A>
+
+
 #include "Gamma/Access.h"
 #include "Gamma/Containers.h"
 #include "Gamma/ipl.h"
@@ -13,6 +22,8 @@ namespace gam{
 namespace ipl{
 
 /// Truncating random-access interpolation strategy
+
+/// \ingroup ipl
 template <class T>
 struct Trunc{
 
@@ -36,6 +47,8 @@ struct Trunc{
 
 
 /// Nearest neighbor random-access interpolation strategy
+    
+/// \ingroup ipl
 template <class T>
 struct Round{
 
@@ -65,6 +78,8 @@ struct Round{
 
 
 /// Linear random-access interpolation strategy
+    
+/// \ingroup ipl
 template <class T>
 struct Linear{
 
@@ -97,6 +112,8 @@ struct Linear{
 
 
 /// Cubic random-access interpolation strategy
+    
+/// \ingroup ipl
 template <class T>
 struct Cubic{
 
@@ -151,6 +168,8 @@ struct Cubic{
 
 
 /// Allpass random-access interpolation strategy
+    
+/// \ingroup ipl
 template <class T>
 struct AllPass{
 
@@ -188,10 +207,12 @@ struct AllPass{
 
 
 /// Dynamically switchable random-access interpolation strategy
+    
+/// \ingroup ipl
 template <class T>
-struct Any{
+struct Switchable{
 
-	Any(): mType(TRUNC){}
+	Switchable(): mType(TRUNC){}
 	
 	ipl::Type type() const { return mType; }
 	void type(ipl::Type v){ mType=v; }
@@ -247,10 +268,14 @@ protected:
 // 
 // method		desc
 // ()			return value at fraction
-// push			push new value into interpolation window 
+// push			push new value into interpolation window
+
+/// \defgroup iplSeq Sequence Interpolation
 namespace iplSeq{
 
 	/// Base class for sequence interpolation strategies
+    
+    /// \ingroup iplSeq
 	template <uint32_t N, class T>
 	struct Base{
 		Base(const T& v=0){ set(v); }
@@ -271,6 +296,8 @@ namespace iplSeq{
 	};
 
 	/// Truncating sequence interpolation strategy
+    
+    /// \ingroup iplSeq
 	template <class T>
 	struct Trunc : public Base<1,T>{
 		using Base<1,T>::v;
@@ -279,6 +306,8 @@ namespace iplSeq{
 	};
 	
 	/// Linear sequence interpolation strategy
+    
+    /// \ingroup iplSeq
 	template <class T>
 	struct Linear : public Base<2,T>{
 		using Base<2,T>::v;
@@ -287,6 +316,8 @@ namespace iplSeq{
 	};
 
 	/// Cubic sequence interpolation strategy
+    
+    /// \ingroup iplSeq
 	template <class T>
 	struct Cubic : public Base<4,T>{
 		using Base<4,T>::v;
@@ -297,6 +328,8 @@ namespace iplSeq{
 	};
 
 	/// Cosine sequence interpolation strategy
+    
+    /// \ingroup iplSeq
 	template <class T>
 	struct Cosine : public Base<2,T>{
 		using Base<2,T>::v;
@@ -315,9 +348,13 @@ namespace iplSeq{
 //	bool done(uint32_t pos);							// fixed-point tap done reading
 //	T operator()(T v, T max, T min);					// float tap post increment check
 //	void reset();										// reset internal state, if any
+    
+/// \defgroup phsInc Phase Increment
 namespace phsInc{
 
-	/// Clip (saturate) at boundary
+	/// Play waveform one cycle, then hold at the end. A one-shot.
+    
+    /// \ingroup phsInc
 	struct Clip{
 		void reset(){}
 	
@@ -338,7 +375,9 @@ namespace phsInc{
 	};
 
 
-	/// Reverse direction at boundary
+	/// Play waveform forward, backwards, forward, etc.  Like Wrap, loops indefinitely.
+    
+    /// \ingroup phsInc
 	struct Fold{
 		Fold(): dir(0){}
 	
@@ -366,7 +405,9 @@ namespace phsInc{
 	};
 
 
-	/// Wrap according to binary on/off pattern
+	/// Plays and holds waveform according to binary repeating pattern.
+    
+    /// \ingroup phsInc
 	struct Pat{
 	
 		Pat(){
@@ -416,7 +457,9 @@ namespace phsInc{
 	};
 
 
-	/// Repeat a finite number of times
+	/// Repeat waveform a fixed number of times, then hold at the end.
+    
+    /// \ingroup phsInc
 	struct Rep{
 		Rep(){ number(1); reset(); }
 		
@@ -452,7 +495,9 @@ namespace phsInc{
 	};
 
 
-	/// Wrap around at boundary
+	/// Loop waveform indefinitely.
+            
+    /// \ingroup phsInc
 	struct Wrap{
 		void reset(){}
 	

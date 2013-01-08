@@ -10,17 +10,21 @@
 #include "Gamma/Noise.h"
 #include "Gamma/Oscillator.h"
 
-#define TEM template<class T>
-
 namespace gam{
 
+///\defgroup Effects
 
-/// Amplitude envelope extractor
+/// Envelope Follower
+
+///\ingroup Filters    
+///\ingroup Envelopes
 template <class Tv=real, class Tp=real, class Ts=Synced>
-struct AmpEnv{
+struct EnvFollow{
 
-	/// @param[in] freq		Cutoff frequency of smoothing filter
-	AmpEnv(Tp freq=10)
+	/// \param[in] freq		Cutoff frequency of smoothing filter
+    
+    
+	EnvFollow(Tp freq=10)
 	:	lpf(freq){}
 
 	/// Filter next sample
@@ -36,7 +40,10 @@ struct AmpEnv{
 
 
 
-/// 3 biquad filters in parallel
+/// 3 biquad filters (of floats) in parallel
+    
+/// \ingroup Filters
+/// \ingroup Effects
 struct Biquad3{
 	/// Constructor
 	Biquad3(float f0, float f1, float f2, float q=8, FilterType type=BAND_PASS):
@@ -52,7 +59,8 @@ struct Biquad3{
 };
 
 
-
+/// Percussive noise burst consisting of resonant-filtered white noise with a rapidly decaying amplitude
+    
 struct Burst{
 	Burst(float frq1=20000, float frq2=4000, float dec=0.1, float res=2) : 
 		freq1(frq1), freq2(frq2), fil(frq1, res, BAND_PASS), env(dec)
@@ -81,9 +89,9 @@ struct Burst{
 /// Sine wave with frequency and amplitude driven by an exponentially decaying envelope.
 template <class T=gam::real>
 struct Chirp{
-	/// @param[in] freq1	start frequency
-	/// @param[in] freq2	end frequency
-	/// @param[in] decay60	units to decay by 60 dB
+	/// \param[in] freq1	start frequency
+	/// \param[in] freq2	end frequency
+	/// \param[in] decay60	units to decay by 60 dB
 	Chirp(T freq1=220, T freq2=0, T decay=0.2):
 		osc(freq1), env(decay), freq1(freq1), freq2(freq2)
 	{}
@@ -170,13 +178,15 @@ struct ChebyN{
 
 
 /// Dual delay-line chorus driven by quadrature sinusoid
+
+/// \ingroup Effects
 template <class T=gam::real>
 struct Chorus{
-	/// @param[in] delay	Delay interval
-	/// @param[in] depth	Depth of delay-line modulation
-	/// @param[in] freq		Frequency of modulation
-	/// @param[in] ffd		Feedforward amount
-	/// @param[in] fbk		Feedback amount
+	/// \param[in] delay	Delay interval
+	/// \param[in] depth	Depth of delay-line modulation
+	/// \param[in] freq		Frequency of modulation
+	/// \param[in] ffd		Feedforward amount
+	/// \param[in] fbk		Feedback amount
 	Chorus(float delay=0.0021, float depth=0.002, float freq=1, float ffd=0.9, float fbk=0.1):
 		comb1(delay + depth, delay, ffd, fbk),
 		comb2(delay + depth, delay, ffd, fbk),
@@ -224,10 +234,12 @@ struct Chorus{
 
 
 /// Frequency shifter
+    
+/// \ingroup Effects
 template <class T=gam::real>
 struct FreqShift{
 
-	/// @param[in] shift	frequency shift amount
+	/// \param[in] shift	frequency shift amount
 	FreqShift(float shift=1): mod(shift){}
 
 	/// Frequency shift input
@@ -245,6 +257,7 @@ struct FreqShift{
 
 
 // Saw oscillator with sweepable filter.
+       
 struct MonoSynth{
 	MonoSynth(float freq=440, float dur=0.8, float ctf1=1000, float ctf2=100, float res=3):
 		osc(freq), filter(ctf1, res), env(dur), opEnv(100), ctf1(ctf1), ctf2(ctf2)
@@ -273,11 +286,13 @@ struct MonoSynth{
 
 
 /// Equal-power 2-channel panner
+    
+/// \ingroup Effects
 template <class T=gam::real>
 class Pan{
 public:
 
-	/// @param[in] pos	Signed unit position in [-1, 1]
+	/// \param[in] pos	Signed unit position in [-1, 1]
 	Pan(T pos=0){ this->pos(pos); }
 
 	/// Filter sample (mono-to-stereo)
@@ -332,6 +347,8 @@ protected:
 
 
 /// Plucked string source/filter
+    
+/// \ingroup Oscillators
 struct Pluck{
 	Pluck(double freq=440, double decay=0.99)
 	:	env(0.1), fil(3000, 1, LOW_PASS), comb(1./27.5, 1./freq, 1, decay)
@@ -354,8 +371,8 @@ struct Pluck{
 template <class T=gam::real>
 class Quantizer : public Synced{
 public:
-	/// @param[in] freq		Frequency of sequence quantization
-	/// @param[in] step		Step size of amplitude quantization
+	/// \param[in] freq		Frequency of sequence quantization
+	/// \param[in] step		Step size of amplitude quantization
 	Quantizer(double freq=2000, T step=0);
 
 	void freq(double value);	///< Set freqency of sequence quantization
@@ -373,27 +390,32 @@ private:
 	bool mDoStep;
 };
 
-TEM Quantizer<T>::Quantizer(double freq, T step)
+template<class T>
+Quantizer<T>::Quantizer(double freq, T step)
 :	mPeriod(1./freq)
 {
 	this->step(step);
 }
 
-TEM inline void Quantizer<T>::freq(double v){ period(1./v); }
+template<class T>
+inline void Quantizer<T>::freq(double v){ period(1./v); }
 
-TEM inline void Quantizer<T>::period(double v){
+template<class T>
+inline void Quantizer<T>::period(double v){
 	mPeriod = v;
 	mSamples = v * spu();
 	if(mSamples < 1.) mSamples = 1.;
 }
 
-TEM inline void Quantizer<T>::step(T v){
+template<class T>
+inline void Quantizer<T>::step(T v){
 	mStep = v;
 	mDoStep = mStep > 0.;
 	if(mDoStep) mStepRec = 1./mStep;
 }
 
-TEM inline T Quantizer<T>::operator()(T vi){
+template<class T>
+inline T Quantizer<T>::operator()(T vi){
 	if(++mCount >= mSamples){
 		mCount -= mSamples;
 		mHeld = mDoStep ? scl::round(vi, mStep, mStepRec) : vi;
@@ -401,7 +423,8 @@ TEM inline T Quantizer<T>::operator()(T vi){
 	return mHeld;
 }
 
-TEM void Quantizer<T>::onResync(double r){
+template<class T>
+void Quantizer<T>::onResync(double r){
 	period(mPeriod);
 }
 
@@ -414,8 +437,8 @@ TEM void Quantizer<T>::onResync(double r){
 /// a one-pole low-pass filter.
 template <class T=gam::real>
 struct Threshold{
-	/// @param[in] thresh	Comparing threshold
-	/// @param[in] freq		Cutoff frequency of output smoother
+	/// \param[in] thresh	Comparing threshold
+	/// \param[in] freq		Cutoff frequency of output smoother
 	Threshold(T thresh, T freq=10):lpf(freq), thresh(thresh){}
 	
 	/// Returns 0 if less than threshold, 1 otherwise
@@ -429,5 +452,4 @@ struct Threshold{
 };
 
 } // gam::
-#undef TEM
 #endif

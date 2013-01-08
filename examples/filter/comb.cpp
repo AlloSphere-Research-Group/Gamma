@@ -13,7 +13,7 @@ Accum<> tmr(sweepFreq);		// Switch between flanging types
 Saw<> src(100);
 //NoiseWhite<> src;
 LFO<> mod(sweepFreq);
-Comb<float, ipl::Any> comb(1./100, 1,0);
+Comb<float, ipl::Switchable> comb(1./100, 1,0);
 
 void audioCB(AudioIOData& io){
 
@@ -51,4 +51,4 @@ void audioCB(AudioIOData& io){
 	}
 }
 
-RUN(audioCB);
+RUN_AUDIO_MAIN

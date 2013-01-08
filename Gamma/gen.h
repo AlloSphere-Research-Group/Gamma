@@ -3,23 +3,6 @@
 
 /*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information
-
-	File Description:
-
-	Generator function objects
-
-	A generator is a lightweight object that generates a sequence of elements.
-	Generators have a standard interface specified by the Val class. The array
-	access operator, [], is overloaded so generators can be treated like
-	arrays. A const qualified generator only means that its generating function 
-	parameters are held constant; its current value can change.
-	A convention used is that generators' current value is the one most recently
-	generated. This means one must be careful when initializing a generator so 
-	that it generates the first element properly. Usually this means setting its
-	value to what would have been the previously generated value. For instance, 
-	to get the sequence 0,1,2,... from RAdd1, its value must be initialized to 
-	-1. Constructors 'rewind' the generator, so that the initial value argument
-	is returned on the next generate call.
 */
 
 #include "Gamma/scl.h"
@@ -29,6 +12,20 @@
 namespace gam{
 
 /// Generator function objects
+    
+/// A generator is a lightweight object that generates a sequence of elements.
+/// Generators have a standard interface specified by the Val class. The array
+/// access operator, [], is overloaded so generators can be treated like
+/// arrays. A const qualified generator only means that its generating function
+/// parameters are held constant; its current value can change.
+/// A convention used is that generators' current value is the one most recently
+/// generated. This means one must be careful when initializing a generator so
+/// that it generates the first element properly. Usually this means setting its
+/// value to what would have been the previously generated value. For instance,
+/// to get the sequence 0,1,2,... from RAdd1, its value must be initialized to
+/// -1. Constructors 'rewind' the generator, so that the initial value argument
+/// is returned on the next generate call.
+
 namespace gen{
 
 /// Single value generator
@@ -45,7 +42,7 @@ struct Val{
 	template<class U> bool operator>=(const U& v) const { return val>=v; }
 	template<class U> bool operator< (const U& v) const { return val< v; }
 	template<class U> bool operator<=(const U& v) const { return val<=v; }
-	
+
 	mutable T val;											///< Value
 	// Since this is a generator, we will allow its value to be modified if 
 	// it's a const.
@@ -63,14 +60,19 @@ struct Impulse : public Val<T>{ INHERIT;
 	T operator()() const {T t=val; val=0; return t;}	///< Generate next value
 };
 
-/// Nyquist sequence generator
+/// Generates a Nyquist signal, i.e., -1, 1, -1, 1, …
 template<class T=gam::real>
 struct Nyquist : public Val<T>{ INHERIT;
 	Nyquist(const T& val=T(1)): Val<T>(-val){}			///< Constructor
 	T operator()() const { return val = -val; }			///< Generate next value
 };
 
-/// Reciprocal sequence generator
+///Reciprocal sequence generator
+
+///Given a type that can be initialized by passing
+///the integer 1 to the constructor (let the value be “x”), 
+///it generates the sequence x/1, x/2, x/3, x/4, etc.
+///http://www.britannica.com/EBchecked/topic/1500010/harmonic-sequence
 template <class T=gam::real>
 struct Recip : public Val<T>{ INHERIT;
 	Recip(const T& val=T(1)): Val<T>(val){}				///< Constructor
@@ -292,8 +294,8 @@ protected:
 template <class T=gam::real>
 struct RAdd: public Val<T>{ INHERIT;
 
-	/// @param[in] add	addition amount
-	/// @param[in] val	current value
+	/// \param[in] add	addition amount
+	/// \param[in] val	current value
 	RAdd(const T& add=T(1), const T& val=T(0))
 	: Val<T>(val-add), add(add){}
 	
@@ -423,10 +425,10 @@ public:
 	using C::operator();
 	using C::operator=;
 
-	/// @param[in] frq	unit frequency
-	/// @param[in] amp	amplitude
-	/// @param[in] phs	unit phase
-	/// @param[in] dec	unit decay/grow factor
+	/// \param[in] frq	unit frequency
+	/// \param[in] amp	amplitude
+	/// \param[in] phs	unit phase
+	/// \param[in] dec	unit decay/grow factor
 	CReson(const T& frq=T(0), const T& amp=T(1), const T& phs=T(0), const T& dec=T(1)){
 		set(frq, amp, phs);
 	}
@@ -462,7 +464,7 @@ public:
 	void freq(const T& v){ factor(v, decay()); }
 
 	/// Set unit frequency, amplitude, unit phase, and decay/grow factor
-	
+
 	/// The phase state will be rewound 1 iteration so the first function call
 	/// will return a complex number at the desired phase.
 	void set(const T& frq, const T& amp, const T& phs, const T& dec=T(1)){
@@ -492,10 +494,10 @@ public:
 
 protected:
 	C mFactor;
-	
+
 	// Set 60 dB decay interval
 	//void decay(const Tv& v){ width(T(2.198806796637603 /* -ln(0.001)/pi */)/v); }
-	
+
 	// Set unit bandwidth
 	//void width(const Tv& v){ mDecay=::exp(-M_PI*v); freq(freq()); }
 };
@@ -507,18 +509,18 @@ typedef CReson<double>	CResond;
 
 struct OnOff{
 	OnOff(uint32_t max, uint32_t ons) : max(max), ons(ons), cnt(0){}
-	
+
 	bool operator()(){
 		cnt++;
 		if(cnt <= ons) return true;
 		if(cnt >= max) cnt = 0;
 		return ons >= max;
 	}
-	
+
 	void set(uint32_t max, uint32_t ons, uint32_t cnt){
 		this->max = max; this->ons = ons; this->cnt = cnt;
 	}
-	
+
 	uint32_t max, ons, cnt;
 };
 
@@ -527,7 +529,7 @@ struct OneOff{
 	OneOff(bool v=true): mVal(v) {}
 	bool operator()(){ bool r=mVal; mVal=false; return r; }
 	void set(){ mVal=true; }
-	
+
 private:
 	bool mVal;
 };
@@ -535,32 +537,39 @@ private:
 
 /// Fixed-sized array with a sequence generator
 template <uint32_t N, class T=gam::real, class G=gen::RAdd1<uint32_t> >
-class Seq: public Multi<N,T>{
+class Seq: public Vec<N,T>{
 public:
 
-	Seq(const T& val){ for(int i=0; i<N; ++i){ this->elems[i]=val; } }
-	Seq(const T * vals){ for(int i=0; i<N; ++i){ this->elems[i]=vals[i]; } }
+	Seq(const T& val){ set(val); }
+	Seq(const T * vals){ set(vals); }
 
 	/// Generate next array element
 	T operator()(){ return (*this)[((uint32_t)mTap())%N]; }
 
 	/// Get reference to index generator
 	G& tap(){ return mTap; }
-	
+
 private:
 	G mTap;
 };
 
 
-/// Triggers after a specified number of iterations and then resets
+/// Triggers after a specified number of iterations and then resets.
+    
+    
+/// Outputs true on every nth sample and false on the rest.
+/// Argument "num" determines the length of the sequence.
+/// Argument "val", with a default value of zero can be set by the user
+/// to adjust the location of the triggering sample within the sequence.
 struct Trigger{
 	Trigger(uint32_t num, uint32_t val=0) : val(val), num(num){}
-	
+
 	/// Returns (triggers) true upon reset
 	bool operator()(){
 		if(++val >= num){ val = 0; return true; }
 		return false;
 	}
+
 	uint32_t val;		///< Value
 	uint32_t num;		///< Maximum value
 };

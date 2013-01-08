@@ -5,9 +5,7 @@
 	See COPYRIGHT file for authors and license information 
 
 	File Description: 
-	Static (fixed size) POD types including complex numbers, quaternions, 
-	2,3,4-vectors, 3x3 matrix, and fixed-size array.
-	
+	Complex numbers and n-vectors.
 */
 
 
@@ -17,25 +15,13 @@
 
 namespace gam{
 
-typedef float			real;	// default real number type
-
-
 template<class T> class Complex;
 template<uint32_t N, class T> class Vec;
 
-typedef Vec<2,float > float2;
-typedef Vec<2,double> double2;
 
-//typedef Polar<float > Polarf;
-//typedef Polar<double> Polard;
-//typedef Complex<float > Complexf;
-//typedef Complex<double> Complexd;
-//typedef Vec2<float> Vec2f;
-//typedef Vec2<double> Vec2d;
-//typedef Vec3<float> Vec3f;
-//typedef Vec3<double> Vec3d;
-//typedef Vec4<float> Vec4f;
-//typedef Vec4<double> Vec4d;
+typedef float real;				///< Default real number type
+typedef Vec<2,float > float2;	///< Vector of 2 floats
+typedef Vec<2,double> double2;	///< Vector of 2 doubles
 
 
 /// Polar number with argument in radians
@@ -174,263 +160,39 @@ template<class T> struct NamedElems<3,T>{ T x,y,z; };
 template<class T> struct NamedElems<4,T>{ T x,y,z,w; };
 
 
-/// Multi-element container
+/// N-vector or fixed-size array
 
-/// This is a fixed size array to enable better loop unrolling optimizations
-/// by the compiler and to avoid an extra 'size' data member for small-sized
-/// arrays. Elements are not initialized by default for efficiency.
+/// This is fixed in size to enable better loop unrolling optimizations and to 
+/// avoid an extra 'size' data member for small sizes.
 template <uint32_t N, class T>
-struct Multi : public NamedElems<N,T> {
+struct Vec : public NamedElems<N,T> {
 
-	using NamedElems<N,T>::x;
+    using NamedElems<N,T>::x;
 
-	typedef Multi M;
-
-
-	T * elems(){ return &x; }
-	const T * elems() const { return &x; }
-
-	/// Set element at index with no bounds checking
-	T& operator[](uint32_t i){ return elems()[i];}
-	
-	/// Get element at index with no bounds checking
-	const T& operator[](uint32_t i) const { return elems()[i]; }
-
-	#define IT for(uint32_t i=0; i<N; ++i)
-
-	bool operator !=(const M& v){ IT{ if((*this)[i] == v[i]) return false; } return true; }
-	bool operator !=(const T& v){ IT{ if((*this)[i] == v   ) return false; } return true; }
-	M& operator   = (const M& v){ IT{ (*this)[i] = v[i]; } return *this; }
-	M& operator   = (const T& v){ IT{ (*this)[i] = v;    } return *this; }
-	bool operator ==(const M& v){ IT{ if((*this)[i] != v[i]) return false; } return true; }
-	bool operator ==(const T& v){ IT{ if((*this)[i] != v   ) return false; } return true; }
-
-	#undef IT
-
-	/// Returns size of array
-	static uint32_t size(){ return N; }
-
-	/// Zeros all elements.
-	void zero(){ memset(elems(), 0, N * sizeof(T)); }
-};
-
-
-
-/// A value in the form: base^expo
-template <class T=double>
-struct ValPower{
-	ValPower(const T& base=2, const T& expo=0){ (*this)(base, expo); }
-	
-	T operator()() const { return mVal; }
-	T base() const { return mBase; }
-	T expo() const { return mExpo; }
-	
-	void operator()(const T& base, const T& expo){ mBase=base; mExpo=expo; computeVal(); }
-	void base(const T& v){ mBase=v; computeVal(); }
-	void expo(const T& v){ mExpo=v; computeVal(); }
-	void expoAdd(const T& v){ expo(mExpo+v); }
-
-private:
-	T mBase, mExpo, mVal;
-	void computeVal(){ mVal=::pow(mBase, mExpo); }
-};
-
-
-
-/// A closed interval [min, max]
-
-/// An interval is a connected region of the real line. Geometrically, it
-/// describes a 0-sphere. Order is strongly enforced so that the endpoints will
-/// always satisfy min <= max.
-template <class T>
-class Interval{
-public:
-
-	Interval()
-	:	mMin(0), mMax(1){}
-
-	Interval(const T& min, const T& max)
-	{ endpoints(min,max); }
-
-	T center() const { return (max()+min())/T(2); }	///< Returns center point
-
-	/// Test is point is contained exclusively within interval
-	bool contains(const T& v) const { return v>=min() && v<=max(); }
-
-	bool degenerate() const { return min()==max(); }///< Returns true if diameter is zero
-	T diameter() const { return max()-min(); }		///< Returns absolute difference of endpoints
-	const T& max() const { return mMax; }			///< Get maximum endpoint
-	const T& min() const { return mMin; }			///< Get minimum endpoint
-	bool proper() const { return min()!=max(); }	///< Returns true if diameter is non-zero
-	T radius() const { return diameter()/T(2); }	///< Returns one-half the diameter
-
-	/// Linearly map point in interval to point in the unit interval
-	T toUnit(const T& v) const { return (v-min())/diameter(); }
-	
-	template <class U>
-	bool operator == (const Interval<U>& v){ return min()==v.min() && max()==v.max(); }
-
-	template <class U>
-	bool operator != (const Interval<U>& v){ return !(*this == v); }
-	
-	template <class U>
-	Interval& operator +=(const Interval<U>& v){ endpoints(min()+v.min(), max()+v.max()); return *this; }
-
-	template <class U>
-	Interval& operator -=(const Interval<U>& v){ endpoints(min()-v.max(), max()-v.min()); return *this; }
-	
-	template <class U>
-	Interval& operator *=(const Interval<U>& v){
-		T a=min()*v.min(), b=min()*v.max(), c=max()*v.min(), d=max()*v.max();
-		mMin = min(min(a,b),min(c,d));
-		mMax = max(max(a,b),max(c,d));
-		return *this;
-	}
-
-	template <class U>
-	Interval& operator /=(const Interval<U>& v){
-		T a=min()/v.min(), b=min()/v.max(), c=max()/v.min(), d=max()/v.max();
-		mMin = min(min(a,b),min(c,d));
-		mMax = max(max(a,b),max(c,d));
-		return *this;
-	}
-
-	/// Set center point preserving diameter
-	Interval& center(const T& v){ return centerDiameter(v, diameter()); }
-
-	/// Set diameter (width) preserving center
-	Interval& diameter(const T& v){ return centerDiameter(center(), v); }
-
-	/// Set center and diameter
-	Interval& centerDiameter(const T& c, const T& d){
-		mMin = c - d*T(0.5);
-		mMax = mMin + d;
-		return *this;
-	}
-
-	/// Set the endpoints
-	Interval& endpoints(const T& min, const T& max){
-		mMax=max; mMin=min;
-		if(mMin > mMax){ T t=mMin; mMin=mMax; mMax=t; }
-		return *this;
-	}
-
-	/// Translate interval by fixed amount
-	Interval& translate(const T& v){ mMin+=v; mMax+=v; return *this; }
-
-	/// Set maximum endpoint
-	Interval& max(const T& v){ return endpoints(min(), v); }
-	
-	/// Set minimum endpoint
-	Interval& min(const T& v){ return endpoints(v, max()); }
-
-private:
-	T mMin, mMax;
-
-	const T& min(const T& a, const T& b){ return a<b?a:b; }
-	const T& max(const T& a, const T& b){ return a>b?a:b; }
-};
-
-
-/// A value wrapped to an interval [min, max)
-
-/// Mathematical correctness is strongly enforced. The value will always lie in 
-/// the specified interval.
-template <class T>
-class ValWrap : public Interval<T>{
-public:
-	typedef Interval<T> I;
-	typedef ValWrap<T> V;
-
-	ValWrap(): I(), mVal(0){}
-
-	ValWrap(const T& max, const T& min=T(0), const T& v=T(0))
-	: I(min, max), mVal(v)
-	{}
-	
-	ValWrap& operator= (const T& v){ return val(v); }				///< Set value
-	ValWrap& operator+=(const T& v){ return val(mVal+v); }			///< Add value
-	//ValWrap& operator+=(const ValWrap& v){ return (*this)+=v(); }	///< Add wrapped value
-	ValWrap& operator-=(const T& v){ return val(mVal-v); }			///< Subtract value
-	//ValWrap& operator-=(const ValWrap& v){ return (*this)-=v(); }	///< Subtract wrapped value
-
-	ValWrap& operator*=(const T& v){ return val(mVal*v); }			///< Multiply value
-	//ValWrap& operator*=(const ValWrap& v){ return (*this)*=v(); }	///< Multiply wrapped value
-	ValWrap& operator/=(const T& v){ return val(mVal/v); }			///< Divide value
-	//ValWrap& operator/=(const ValWrap& v){ return (*this)/=v(); }	///< Divide wrapped value
-	
-	ValWrap  operator+ (const T& v) const { return V(*this)+=v; }
-	ValWrap  operator- (const T& v) const { return V(*this)-=v; }
-	ValWrap  operator* (const T& v) const { return V(*this)*=v; }
-	ValWrap  operator/ (const T& v) const { return V(*this)/=v; }
-	
-	ValWrap  operator++(int){ V r=*this; ++(*this); return r; }		///< Postfix increment value
-	ValWrap  operator--(int){ V r=*this; --(*this); return r; }		///< Postfix decrement value
-	ValWrap& operator++(){ return val(++mVal); }					///< Prefix increment value
-	ValWrap& operator--(){ return val(--mVal); }					///< Prefix decrement value
-
-	/// Set wrapping interval
-	ValWrap& endpoints(const T& min, const T& max){
-		I::endpoints(min,max);
-		return val(val());
-	}
-
-	ValWrap& max(const T& v){ I::max(v); return val(val()); }
-	ValWrap& min(const T& v){ I::min(v); return val(val()); }
-
-	ValWrap& val(T v){
-	
-		if(I::proper()){
-			if(!(v < I::max())){
-				T d = I::diameter();
-				v -= d;
-				if(!(v < I::max())) v -= d * (T)(uint32_t)((v - I::min())/d);
-			}
-			else if(v < I::min()){
-				T d = I::diameter();
-				v += d;
-				if(v < I::min()) v += d * (T)(uint32_t)(((I::min() - v)/d) + 1);
-			}
-			mVal = v;
-		}
-		else{
-			mVal = I::min();
-		}
-		return *this;
-	}
-
-
-	const T& operator()() const { return mVal; }
-
-	/// Returns positive unit fractional position in interval
-	double fraction() const {
-		return I::proper() ? double(val())/I::diameter() : 0.;
-	}
-
-	const T& val() const { return mVal; }
-	
-	operator T() const { return mVal; }
-	
-protected:
-	T mVal;
-};
-
-
-
-
-/// Fixed-size vector
-template <uint32_t N, class T>
-struct Vec : public Multi<N,T> {
-
-	typedef Vec<N,T> V;
 
 	Vec(const T& v=T()){ set(v); }
 	Vec(const T& v1, const T& v2){ set(v1,v2); }
 	Vec(const T& v1, const T& v2, const T& v3){ set(v1,v2,v3); }
 	Vec(const T& v1, const T& v2, const T& v3, const T& v4){ set(v1,v2,v3,v4); }
 
+	template <class U>
+	Vec(const U * src){ set(src); }
+
 	template <uint32_t N2, class T2>
 	Vec(const Vec<N2, T2>& v){ set(v); }
+
+
+    /// Returns size of vector
+    static uint32_t size(){ return N; }
+
+    T * elems(){ return &x; }
+    const T * elems() const { return &x; }
+
+    /// Set element at index (no bounds checking)
+    T& operator[](uint32_t i){ return elems()[i];}
+
+    /// Get element at index (no bounds checking)
+    const T& operator[](uint32_t i) const { return elems()[i]; }
 
 	/// Get a vector comprised of indexed elements
 	Vec<2,T> get(int i0, int i1) const {
@@ -444,38 +206,42 @@ struct Vec : public Multi<N,T> {
 	Vec<4,T> get(int i0, int i1, int i2, int i3) const {
 		return Vec<4,T>((*this)[i0], (*this)[i1], (*this)[i2], (*this)[i3]); }
 
+
 	#define IT(n) for(uint32_t i=0; i<n; ++i)
 
-	bool operator !=(const V& v){ IT(N){ if((*this)[i] == v[i]) return false; } return true; }
+	bool operator !=(const Vec& v){ IT(N){ if((*this)[i] == v[i]) return false; } return true; }
 	bool operator !=(const T& v){ IT(N){ if((*this)[i] == v   ) return false; } return true; }
-	V& operator = (const V& v){ IT(N) (*this)[i] = v[i]; return *this; }
-	V& operator = (const T& v){ IT(N) (*this)[i] = v;    return *this; }
-	bool operator ==(const V& v){ IT(N){ if((*this)[i] != v[i]) return false; } return true; }
+	Vec& operator = (const Vec& v){ IT(N) (*this)[i] = v[i]; return *this; }
+	Vec& operator = (const T& v){ IT(N) (*this)[i] = v;    return *this; }
+	bool operator ==(const Vec& v){ IT(N){ if((*this)[i] != v[i]) return false; } return true; }
 	bool operator ==(const T& v){ IT(N){ if((*this)[i] != v   ) return false; } return true; }
-	V  operator * (const V& v) const { V r; IT(N) r[i] = (*this)[i] * v[i]; return r; }
-	V  operator * (const T& v) const { V r; IT(N) r[i] = (*this)[i] * v;    return r; }
-	V& operator *=(const V& v){ IT(N) (*this)[i] *= v[i]; return *this; }
-	V& operator *=(const T& v){ IT(N) (*this)[i] *= v;    return *this; }
-	V  operator / (const V& v) const { V r; IT(N) r[i] = (*this)[i] / v[i]; return r; }
-	V  operator / (const T& v) const { V r; IT(N) r[i] = (*this)[i] / v;    return r; }
-	V& operator /=(const V& v){ IT(N) (*this)[i] /= v[i]; return *this; }
-	V& operator /=(const T& v){ IT(N) (*this)[i] /= v;    return *this; }
-	V  operator - (          ) const { V r; IT(N) r[i] = -(*this)[i]; return r; }
-	V  operator - (const V& v) const { V r; IT(N) r[i] = (*this)[i] - v[i]; return r; }
-	V  operator - (const T& v) const { V r; IT(N) r[i] = (*this)[i] - v;    return r; }
-	V& operator -=(const V& v){ IT(N) (*this)[i] -= v[i]; return *this; }
-	V& operator -=(const T& v){ IT(N) (*this)[i] -= v;    return *this; }
-	V  operator + (const V& v) const { V r; IT(N) r[i] = (*this)[i] + v[i]; return r; }
-	V  operator + (const T& v) const { V r; IT(N) r[i] = (*this)[i] + v;    return r; }
-	V& operator +=(const V& v){ IT(N) (*this)[i] += v[i]; return *this; }
-	V& operator +=(const T& v){ IT(N) (*this)[i] += v;    return *this; }
 
+	Vec  operator * (const Vec& v) const { Vec r; IT(N) r[i] = (*this)[i] * v[i]; return r; }
+	Vec  operator * (const T& v) const { Vec r; IT(N) r[i] = (*this)[i] * v;    return r; }
+	Vec& operator *=(const Vec& v){ IT(N) (*this)[i] *= v[i]; return *this; }
+	Vec& operator *=(const T& v){ IT(N) (*this)[i] *= v;    return *this; }
+	Vec  operator / (const Vec& v) const { Vec r; IT(N) r[i] = (*this)[i] / v[i]; return r; }
+	Vec  operator / (const T& v) const { Vec r; IT(N) r[i] = (*this)[i] / v;    return r; }
+	Vec& operator /=(const Vec& v){ IT(N) (*this)[i] /= v[i]; return *this; }
+	Vec& operator /=(const T& v){ IT(N) (*this)[i] /= v;    return *this; }
+	Vec  operator - (          ) const { Vec r; IT(N) r[i] = -(*this)[i]; return r; }
+	Vec  operator - (const Vec& v) const { Vec r; IT(N) r[i] = (*this)[i] - v[i]; return r; }
+	Vec  operator - (const T& v) const { Vec r; IT(N) r[i] = (*this)[i] - v;    return r; }
+	Vec& operator -=(const Vec& v){ IT(N) (*this)[i] -= v[i]; return *this; }
+	Vec& operator -=(const T& v){ IT(N) (*this)[i] -= v;    return *this; }
+	Vec  operator + (const Vec& v) const { Vec r; IT(N) r[i] = (*this)[i] + v[i]; return r; }
+	Vec  operator + (const T& v) const { Vec r; IT(N) r[i] = (*this)[i] + v;    return r; }
+	Vec& operator +=(const Vec& v){ IT(N) (*this)[i] += v[i]; return *this; }
+	Vec& operator +=(const T& v){ IT(N) (*this)[i] += v;    return *this; }
 
-	T dot(const V& v) const { T r=T(0); IT(N) r+=(*this)[i]*v[i]; return r; }
+    /// Zeros all elements
+    void zero(){ memset(elems(), 0, N * sizeof(T)); }
+
+	T dot(const Vec& v) const { T r=T(0); IT(N) r+=(*this)[i]*v[i]; return r; }
 	T sum() const { T r=T(0); IT(N) r+=(*this)[i]; return r; }
 	T mag() const { return sqrt(magSqr()); }
 	T magSqr() const { return dot(*this); }
-	Vec sgn() const { return V(*this).normalize(); }
+	Vec normalized() const { return Vec(*this).normalize(); }
 
 	Vec& normalize(){
 		T msqr = magSqr();
@@ -517,7 +283,12 @@ struct Vec : public Multi<N,T> {
 		}
 		return *this;
 	}
-	
+
+	/// Set elements to values from C array
+	template <class U>
+	Vec& set(const U * src){ IT(N){ (*this)[i]=src[i]; } return *this; }
+
+	/// Set to identity, i.e., {1, 0, ..., 0}
 	Vec& setIdentity(){
 		(*this)[0] = T(1);
 		for(uint32_t i=1; i<N; ++i) (*this)[i] = T(0);

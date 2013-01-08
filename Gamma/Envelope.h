@@ -4,6 +4,10 @@
 /*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information */
 
+/// \defgroup Envelopes
+/// Everything in Gamma having to do with envelopes.
+
+
 #include <math.h>
 #include <float.h>
 
@@ -18,26 +22,35 @@ namespace gam{
 
 /// Exponential curve with variable curvature
 
-/// This curve will return values in the interval [start, end] starting from 0 and
-/// ending on 'end' over its length in samples.  The last point is exclusive, so
-/// it takes length + 1 samples to reach 'end' inclusively.  For iterations 
-/// exceeding the specified length, the values returned will be unbounded.
+/// This curve will return values in the interval [start, end] starting from 0
+/// and ending on 'end' over its length in samples.  The last point is
+/// exclusive, so it takes length + 1 samples to reach 'end' inclusively.
+/// For iterations exceeding the specified length, the values returned will be
+/// unbounded. \n\n
+/// Given any two points, as long as they don't have the same value, there are
+/// infinitely many exponential segments starting at the first and ending at the
+/// second. One of these is a straight line between the two. Hence the "variable
+/// curvature" of the Curve object. \n\n
+/// Curve touches both its start and end points while Decay asymptotically
+/// approaches zero.
 ///
 /// \tparam Tv	value (sample) type
 /// \tparam Tp	parameter type
+/// \ingroup Envelopes
+/// \sa Decay
 template <class Tv=real, class Tp=real>
 class Curve{
 public:
 	Curve();
 	
-	/// @param[in] length	length of curve in samples
-	/// @param[in] curve	curvature, c, where 
+	/// \param[in] length	length of curve in samples
+	/// \param[in] curve	curvature, c, where 
 	///						c > 0 approaches slowly (accelerates),
 	///						c < 0 approaches rapidly (decelerates), and
 	///						c = 0 approaches linearly
-	/// @param[in] start	start value
-	/// @param[in] end		end value
-	Curve(Tp length, Tp curve, Tv start=Tv(0), Tv end=Tv(1));
+	/// \param[in] start	start value
+	/// \param[in] end		end value
+	Curve(Tp length, Tp curve, Tv start=Tv(1), Tv end=Tv(0));
 
 	bool done() const;				///< Returns whether curve has gone past end value
 	Tv end() const { return mEnd; }	///< Get end value
@@ -49,10 +62,10 @@ public:
 
 	/// Set length and curvature
 	
-	/// @param[in] length	length of curve in samples
-	/// @param[in] curve	curvature; pos. approaches slowly, neg. approaches rapidly, 0 approaches linearly
-	/// @param[in] start	start value
-	/// @param[in] end		end value
+	/// \param[in] length	length of curve in samples
+	/// \param[in] curve	curvature; pos. approaches slowly, neg. approaches rapidly, 0 approaches linearly
+	/// \param[in] start	start value
+	/// \param[in] end		end value
 	Curve& set(Tp length, Tp curve, Tv start=Tv(0), Tv end=Tv(1));
 
 protected:
@@ -75,6 +88,7 @@ protected:
 /// \tparam N	number of segments
 /// \tparam Tv	value (sample) type
 /// \tparam Tp	parameter type
+/// \ingroup Envelopes 
 template <int N, class Tv=real, class Tp=real, class Ts=Synced>
 class Env : public Ts{
 public:
@@ -140,13 +154,19 @@ public:
 
 	/// Generate next value
 	Tv operator()(){
+
+		// Sustain stage:
 		if(sustained()){
 			return mLevels[mStage];
 		}
+
+		// Interpolating along segment:
 		else if(mPos < mLen){
 			++mPos;
 			return mCurve();
 		}
+
+		// Just went past end of current segment and there are more left:
 		else if(mStage < size()){
 			++mStage;
 			if(mLoop && done()) mStage=0;
@@ -154,9 +174,13 @@ public:
 				mPos = 0;
 				setLen(mStage);
 				mCurve.set(mLen, mCurves[mStage], mLevels[mStage], mLevels[mStage+1]);
-				return (*this)(); // return level of new stage
+
+				// Immediately return start level of new stage
+				return (*this)();
 			}
 		}
+
+		// Envelope is done:
 		return mLevels[mStage];
 	}	
 
@@ -226,8 +250,8 @@ public:
 	
 	/// Set total length of envelope by adjusting one segment length
 	
-	/// @param[in] length		desired length
-	/// @param[in] modSegment	segment whose length is modified to match desired length
+	/// \param[in] length		desired length
+	/// \param[in] modSegment	segment whose length is modified to match desired length
 	Env& totalLength(Tp length, int modSegment){
 		mLengths[modSegment] = Tp(0);
 		mLengths[modSegment] = length - totalLength();
@@ -339,20 +363,21 @@ protected:
 /// \tparam Tv	value (sample) type
 /// \tparam Tp	parameter type
 /// \tparam Ts	sync type
+/// \ingroup Envelopes 
 template <class Tv=real, class Tp=real, class Ts=Synced>
 class AD : public Env<2,Tv,Tp,Ts>{
 public:
 	using Env<2,Tv,Tp,Ts>::release;
 
-	/// @param[in] att	Attack length
-	/// @param[in] dec	Decay length
-	/// @param[in] amp	Amplitude
-	/// @param[in] crv	Curvature of all segments
+	/// \param[in] att	Attack length
+	/// \param[in] dec	Decay length
+	/// \param[in] amp	Amplitude
+	/// \param[in] crv	Curvature of all segments
 	AD(Tp att =Tp(0.01), Tp dec =Tp(0.1), Tv amp = Tv(1), Tp crv =Tp(-4))
 	{
 		attack(att).decay(dec);
-		levels(0,amp,0);
-		curve(crv);
+		this->levels(0,amp,0);
+		this->curve(crv);
 	}
 
 	/// Set attack length
@@ -385,17 +410,18 @@ protected:
 /// \tparam Tv	value (sample) type
 /// \tparam Tp	parameter type
 /// \tparam Ts	sync type
+/// \ingroup Envelopes 
 template <class Tv=real, class Tp=real, class Ts=Synced>
 class ADSR : public Env<3,Tv,Tp,Ts>{
 public:
 	using Env<3,Tv,Tp,Ts>::release;
 
-	/// @param[in] att	Attack length
-	/// @param[in] dec	Decay length
-	/// @param[in] sus	Sustain level (as factor of amplitude)
-	/// @param[in] rel	Release length
-	/// @param[in] amp	Amplitude
-	/// @param[in] crv	Curvature of all segments
+	/// \param[in] att	Attack length
+	/// \param[in] dec	Decay length
+	/// \param[in] sus	Sustain level (as factor of amplitude)
+	/// \param[in] rel	Release length
+	/// \param[in] amp	Amplitude
+	/// \param[in] crv	Curvature of all segments
 	ADSR(
 		Tp att =Tp(0.01), Tp dec =Tp(0.1), Tv sus =Tv(0.7), Tp rel =Tp(1.),
 		Tv amp =Tv( 1),
@@ -403,9 +429,9 @@ public:
 	)
 	{
 		this->sustainPoint(2);
-		levels(0,amp,sus*amp,0);
+		this->levels(0,amp,sus*amp,0);
 		attack(att).decay(dec).release(rel);
-		curve(crv);
+		this->curve(crv);
 	}
 
 	/// Set attack length
@@ -440,13 +466,15 @@ protected:
 /// value. Because zero is never reached, the decay length determines when the
 /// envelope is -60 dB down from its initial value. This envelope is one of the 
 /// most computationally efficient envelopes requiring only a single multiply
-/// per iteration.
+/// per iteration. \n\n Compare to Curve which touches exactly both start and end points.
+/// \ingroup Envelopes
+/// \sa Curve
 template <class T=real, class Ts=Synced>
 class Decay : public Ts{
 public:
 
-	/// @param[in] decay	Number of units until initial value decays -60 dB
-	/// @param[in] val		Intial value
+	/// \param[in] decay	Number of units until initial value decays -60 dB
+	/// \param[in] val		Intial value
 	Decay(T decay=T(1), T val=T(1));
 
 	T decay() const;		///< Returns -60 dB decay length
@@ -467,13 +495,15 @@ protected:
 
 
 
-/// Binary gate controlled by threshold comparison
+/// Binary gate controlled by threshold comparison. The gate closes if the (norm of the) input value remains below threshold for at least closingDelay units of time (typically seconds).
+    
+/// \ingroup Envelopes
 template <class T=real, class Ts=Synced>
 class Gate : public Ts{
 public:
 
-	/// @param[in] closingDelay		units to wait before closing while under threshold
-	/// @param[in] threshold		threshold below which gate closes
+	/// \param[in] closingDelay		units to wait before closing while under threshold
+	/// \param[in] threshold		threshold below which gate closes
 	Gate(double closingDelay=0, double threshold=0.001)
 	:	mDelay(closingDelay), mRemain(closingDelay), mThresh(threshold), mClosed(0)
 	{}
@@ -507,6 +537,8 @@ protected:
 
 
 /// Interpolation envelope segment
+    
+/// \ingroup Envelopes
 template <
 	class Tv=real,
 	template <class> class Si=iplSeq::Linear,
@@ -516,10 +548,10 @@ template <
 class Seg : public Ts{
 public:
 
-	/// @param[in] len		Length of segment in domain units
-	/// @param[in] start	Start value
-	/// @param[in] end		End value
-	/// @param[in] phase	Start phase along segment, in [0,1)
+	/// \param[in] len		Length of segment in domain units
+	/// \param[in] start	Start value
+	/// \param[in] end		End value
+	/// \param[in] phase	Start phase along segment, in [0,1)
 	Seg(Tp len=0.5, Tv start=1, Tv end=0, Tp phase=0):
 		mFreq((Tp)1/len), mAcc(0, phase), mIpl(start)
 	{
@@ -587,14 +619,16 @@ protected:
 
 
 /// Exponential envelope segment for smoothing out value changes.
+    
+/// \ingroup Envelopes
 template <class T=gam::real, class Ts=Synced>
 class SegExp : public Ts{
 public:
 
-	/// @param[in] len		Length of segment in domain units
-	/// @param[in] crv		Curvature of segment
-	/// @param[in] start	Start value
-	/// @param[in] end		End value
+	/// \param[in] len		Length of segment in domain units
+	/// \param[in] crv		Curvature of segment
+	/// \param[in] start	Start value
+	/// \param[in] end		End value
 	SegExp(T len, T crv=-3, T start=1, T end=0):
 		mLen(len), mCrv(crv), mVal1(start), mVal0(end)
 	{
@@ -602,19 +636,19 @@ public:
 	}
 	
 	/// Returns whether envelope is done
-	bool done() const { return mFnc.value() >= T(1); }
+	bool done() const { return mCurve.value() >= T(1); }
 	
 	/// Generate next value
 	T operator()(){
 		if(done()) return mVal0;
-		return ipl::linear(scl::min(mFnc(), T(1)), mVal1, mVal0);
+		return ipl::linear(scl::min(mCurve(), T(1)), mVal1, mVal0);
 	}
 	
 	/// Set new end value.  Start value is set to current value.
 	void operator= (T v){
-		mVal1 = ipl::linear(scl::min(mFnc.value(), T(1)), mVal1, mVal0);
+		mVal1 = ipl::linear(scl::min(mCurve.value(), T(1)), mVal1, mVal0);
 		mVal0 = v;
-		mFnc.reset();
+		mCurve.reset();
 	}
 	
 	/// Set curvature.  Negative gives faster change, positive gives slower change.
@@ -623,19 +657,19 @@ public:
 	/// Set length in domain units.
 	void period(T v){ set(v, mCrv); }
 
-	void reset(){ mFnc.reset(); }
+	void reset(){ mCurve.reset(); }
 
 	/// Set length and curvature
 	void set(T len, T crv){
 		mLen = len; mCrv = crv;
-		mFnc.set(len * Ts::spu(), crv, T(0),T(1));
+		mCurve.set(len * Ts::spu(), crv);
 	}
 	
 	virtual void onResync(double r){ set(mLen, mCrv); }
 	
 protected:
 	T mLen, mCrv, mVal1, mVal0;
-	Curve<T,T> mFnc;
+	Curve<T,T> mCurve;
 };
 
 
@@ -644,30 +678,30 @@ protected:
 
 // Implementation_______________________________________________________________
 
-#define TEM template <class Tv,class Tp>
 
 //---- Curve
-TEM Curve<Tv,Tp>::Curve(): mEnd(Tv(1)), mA(Tv(0)), mB(Tv(0)), mMul(Tp(1))
+template <class Tv,class Tp>
+Curve<Tv,Tp>::Curve(): mEnd(Tv(1)), mA(Tv(0)), mB(Tv(0)), mMul(Tp(1))
 {}
 
-TEM Curve<Tv,Tp>::Curve(Tp length, Tp curve, Tv start, Tv end){
+template <class Tv,class Tp>
+Curve<Tv,Tp>::Curve(Tp length, Tp curve, Tv start, Tv end){
 	set(length, curve, start, end);
 }
 
-TEM inline bool Curve<Tv,Tp>::done() const {
+template <class Tv,class Tp>
+inline bool Curve<Tv,Tp>::done() const {
 	Tv dv = mB - mB*mMul; // linear apx of derivative
 	if(dv > Tv(0))	return value() >= end();
 	else			return value() <= end();
 }
 
-TEM inline Tv Curve<Tv,Tp>::value() const { return mA - mB; }
+template <class Tv,class Tp>
+inline Tv Curve<Tv,Tp>::value() const { return mA - mB; }
 
 // dividing by mMul goes back one step
-TEM inline Curve<Tv,Tp>& Curve<Tv,Tp>::reset(Tv start){
-	mB = (mA-start) / mMul;
-	return *this;
-}
-
+template <class Tv,class Tp>
+inline Curve<Tv,Tp>& Curve<Tv,Tp>::reset(Tv start){ mB = (mA-start) / mMul; return *this; }
 
 // hack to get proper max floating point value
 namespace{
@@ -677,7 +711,8 @@ namespace{
 	template<> inline float		maxReal<float>(){ return FLT_MAX; }
 }
 
-TEM Curve<Tv,Tp>& Curve<Tv,Tp>::set(Tp len, Tp crv, Tv start, Tv end){
+template <class Tv,class Tp>
+Curve<Tv,Tp>& Curve<Tv,Tp>::set(Tp len, Tp crv, Tv start, Tv end){
 	static const Tp EPS = eps<Tp>();
 
 	if(len == Tp(0)){ // if length is 0, return end value immediately
@@ -721,45 +756,53 @@ TEM Curve<Tv,Tp>& Curve<Tv,Tp>::set(Tp len, Tp crv, Tv start, Tv end){
 	return *this;
 }
 
-TEM inline Curve<Tv,Tp>& Curve<Tv,Tp>::value(const Tv& v){ mB = mA-v; return *this; }
+template <class Tv,class Tp>
+inline Curve<Tv,Tp>& Curve<Tv,Tp>::value(const Tv& v){ mB = mA-v; return *this; }
 
-TEM inline Tv Curve<Tv,Tp>::operator()(){
+template <class Tv,class Tp>
+inline Tv Curve<Tv,Tp>::operator()(){
 	mB *= mMul;
 	return value();
 }
-#undef TEM
 
+    
 
-
-#define TM1 template <class T, class Ts>
-#define TM2 T,Ts
 //---- Decay
 
-TM1 Decay<TM2>::Decay(T decay_, T val)
+template <class T, class Ts>
+Decay<T,Ts>::Decay(T decay_, T val)
 :	mVal(val)
 {
 	Ts::initSynced();
 	decay(decay_);
 }
 
-TM1 inline T Decay<TM2>::operator()(){ T o = mVal; mVal *= mMul; return o; }
+template <class T, class Ts>
+inline T Decay<T,Ts>::operator()(){ T o = mVal; mVal *= mMul; return o; }
 
-TM1 inline void Decay<TM2>::decay(T v){
+template <class T, class Ts>
+inline void Decay<T,Ts>::decay(T v){
 	mDcy = v;
 	mMul = scl::t60(v * Ts::spu());
 }
 
-TM1 inline void Decay<TM2>::reset(){ mVal = 1; }
-TM1 inline void Decay<TM2>::value(T v){ mVal = v; }
+template <class T, class Ts>
+inline void Decay<T,Ts>::reset(){ mVal = 1; }
+    
+template <class T, class Ts>
+inline void Decay<T,Ts>::value(T v){ mVal = v; }
 
-TM1 inline T Decay<TM2>::decay() const { return mDcy; }
-TM1 inline bool Decay<TM2>::done(T thr) const { return mVal < thr; }
-TM1 inline T Decay<TM2>::value() const { return mVal; }
+template <class T, class Ts>
+inline T Decay<T,Ts>::decay() const { return mDcy; }
+    
+template <class T, class Ts>
+inline bool Decay<T,Ts>::done(T thr) const { return mVal < thr; }
+    
+template <class T, class Ts>
+inline T Decay<T,Ts>::value() const { return mVal; }
 
-TM1 void Decay<TM2>::onResync(double r){ decay(mDcy); }
-
-#undef TM1
-#undef TM2
+template <class T, class Ts>
+void Decay<T,Ts>::onResync(double r){ decay(mDcy); }
 
 
 } // gam::

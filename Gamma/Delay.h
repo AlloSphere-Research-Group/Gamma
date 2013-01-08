@@ -17,13 +17,29 @@
 
 namespace gam{
 
+/// \defgroup Delays
 
-/// Variable length delay-line
+/// Variable length delay line
 
+/// A delay line is an all-pass filter that shifts samples forward along the 
+/// sampling domain. E.g., if the sampling domain is time, then it shifts 
+/// samples into the future. This delay line operates using one write head and 
+/// one read head by default. More general read and write methods are provided 
+/// so that the delay line can be used as a multi-tap delay line.
+/// Ideally, a delay line is an all-pass filter which means it does not modify 
+/// the magnitude spectrum of the signal, only its phase. However, when reading 
+/// samples from a delay line using Lagrange interpolation (linear, cubic, etc.)
+/// the output signal will be colored as the interpolation acts like a low-pass
+/// filter. To avoid coloration, one must use either no interpolation or 
+/// all-pass interpolation. However, a major caveat of both no and all-pass 
+/// interpolation is that they introduce undesirable transients when the delay 
+/// length is dynamically varied.
+///
 /// \tparam Tv	value (sample) type
 /// \tparam Tp	parameter type
 /// \tparam Si	interpolation strategy
 /// \tparam Ts	sync type
+/// \ingroup Delays    
 template <class Tv=gam::real, template<class> class Si=ipl::Linear, class Ts=Synced>
 class Delay : public ArrayPow2<Tv>, Ts{
 public:
@@ -31,22 +47,23 @@ public:
 	/// Default constructor. Does not allocate memory.
 	Delay();
 
-	/// @param[in]	delay		Delay length
+	/// \param[in]	delay		Delay length
 	/// The size of the delay buffer will be the smallest possible power of two.
 	Delay(float delay);
 
-	/// @param[in]	maxDelay	Maximum delay length
-	/// @param[in]	delay		Delay length
+	/// \param[in]	maxDelay	Maximum delay length
+	/// \param[in]	delay		Delay length
 	/// The size of the delay buffer will be the smallest possible power of two.
 	Delay(float maxDelay, float delay);
 
 
 	void delay(float v);						///< Set delay length
+	void delaySamples(uint32_t);				///< Set delay length in samples
 	void delayUnit(float u);					///< Set delay as (0, 1) of buffer size
 	void freq(float v);							///< Set natural frequency (1/delay())
 	void ipolType(ipl::Type v){ mIpol.type(v); }///< Set interpolation type
 	void maxDelay(float v);						///< Set maximum delay length
-	void zero();								///< Sets all elements to zero
+	void zero();								///< Sets all delay elements to zero
 
 	Tv operator()(const Tv& v);					///< Returns next filtered value
 	Tv operator()() const;						///< Reads delayed element from buffer
@@ -55,8 +72,9 @@ public:
 	void writePre(const Tv& v);					///< Writes element into buffer. Tap is pre-incremented.
 	
 	float delay() const;						///< Get current delay length
-	uint32_t delayIndex(uint32_t delay) const;	///< Get index of delayed element
-	float delayUnit() const;					///< Get unit delay (to max delay)
+	uint32_t delaySamples() const;				///< Get current delay length in samples
+	float delayUnit() const;					///< Get unit delay (relative to max delay)
+	uint32_t delayIndex(uint32_t delay) const;	///< Get index of delayed element	
 	float freq() const { return 1.f/delay(); }	///< Get frequency of delay line
 	uint32_t indexBack() const;					///< Get index of backmost element
 	float maxDelay() const;						///< Get maximum delay length units
@@ -84,14 +102,17 @@ protected:
 
 
 /// Variable delay-line with multiple read taps
+    
+/// \ingroup Delays
+///
 template <class Tv=gam::real, template <class> class Si=ipl::Linear, class Ts=Synced>
-class Delays : public Delay<Tv,Si,Ts> {
+class Multitap : public Delay<Tv,Si,Ts> {
 public:
 
-	/// @param[in]	delay		Delay length. The size of the delay line will 
+	/// \param[in]	delay		Delay length. The size of the delay line will 
 	///							be the smallest possible power of two.
-	/// @param[in]	numTaps		Number of reader taps
-	Delays(float delay, uint32_t numTaps)
+	/// \param[in]	numTaps		Number of reader taps
+	Multitap(float delay, uint32_t numTaps)
 	:	Delay<Tv,Si,Ts>(delay)
 	{	taps(numTaps); }
 
@@ -117,16 +138,22 @@ protected:
 
 
 
-/// Fixed-size shift delay
-
+/// Fixed-size delay that uses memory-shifting.
+    
+/// Where N is the number of elements in the delay, insertion is O(N) which is 
+/// slower than that of the average ring buffer at O(1). Access, however, will 
+/// be optimal (a direct array access) versus that of the ring buffer which 
+/// requires an additional conversion of a relative index into an absolute index.
+///
 /// \tparam N	size of delay
 /// \tparam T	value (sample) type
+/// \ingroup Delays    
 template <uint32_t N, class T>
 class DelayShift{
 public:
 	#define IT for(uint32_t i=0; i<N; ++i)
 
-	/// @param[in] v	Initial value of elements
+	/// \param[in] v	Initial value of elements
 	DelayShift(const T& v=T()){ IT mElems[i]=v; }
 
 	/// Set nth delayed element
@@ -158,26 +185,32 @@ protected:
 };
 
 
-/// One element delay
+/// One sample delay. Returns last input sample.
+
+/// \ingroup Delays
+///  
 template<class T=gam::real> 
 class Delay1 : public DelayShift<1,T>{
 public:
 
-	/// @param[in] v	Initial value of elements
+	/// \param[in] v	Initial value of elements
 	Delay1(const T& v=T()): DelayShift<1,T>(v){}
 };
 
 
-/// Two element delay
+/// Two sample delay. Returns second to last input sample.
+    
+/// \ingroup Delays
+///
 template<class T=gam::real> 
 class Delay2 : public DelayShift<2,T>{
 public:
 
-	/// @param[in] v	Initial value of elements
+	/// \param[in] v	Initial value of elements
 	Delay2(const T& v=T()): DelayShift<2,T>(v){}
 	
-	/// @param[in] v2	Initial value of 2nd delayed element
-	/// @param[in] v1	Initial value of 1st delayed element
+	/// \param[in] v2	Initial value of 2nd delayed element
+	/// \param[in] v1	Initial value of 1st delayed element
 	Delay2(const T& v2, const T& v1){ (*this)[1]=v2; (*this)[0]=v1; }
 };
 
@@ -192,10 +225,13 @@ public:
 /// odd harmonics. If the feedback and feedforward amounts are inverses of each
 /// other, an Nth order all-pass filter results. Comb filters are stable as
 /// long as |feedback| < 1.
+///
 /// \tparam Tv	value type
 /// \tparam Si	interpolation strategy
 /// \tparam Tp	parameter type
 /// \tparam Ts	sync type
+/// \ingroup Delays   
+/// \ingroup Filters
 // H(z) = (ffd + z^-m) / (1 - fbk z^-m)
 // y[n] = ffd x[n] + x[n-m] + fbk y[n-m]
 template<
@@ -215,17 +251,17 @@ public:
 	/// Default constructor. Does not allocate memory.
 	Comb();
 
-	/// @param[in]	delay		Delay length. The size of the delay line will 
+	/// \param[in]	delay		Delay length. The size of the delay line will 
 	///							be the smallest possible power of two.
-	/// @param[in]	ffd			Feedforward amount, in [-1, 1]
-	/// @param[in]	fbk			Feedback amount, in (-1, 1)
+	/// \param[in]	ffd			Feedforward amount, in [-1, 1]
+	/// \param[in]	fbk			Feedback amount, in (-1, 1)
 	Comb(float delay, const Tp& ffd = Tp(0), const Tp& fbk = Tp(0));
 	
-	/// @param[in]	maxDelay	Maximum delay length. The size of the delay line 
+	/// \param[in]	maxDelay	Maximum delay length. The size of the delay line 
 	///							will be the smallest possible power of two.
-	/// @param[in]	delay		Delay length
-	/// @param[in]	ffd			Feedforward amount, in [-1, 1]
-	/// @param[in]	fbk			Feedback amount, in (-1, 1)
+	/// \param[in]	delay		Delay length
+	/// \param[in]	ffd			Feedforward amount, in [-1, 1]
+	/// \param[in]	fbk			Feedback amount, in (-1, 1)
 	Comb(float maxDelay, float delay, const Tp& ffd, const Tp& fbk);
 
 	
@@ -366,11 +402,15 @@ TM1 inline void Delay<TM2>::delay(float v){
 
 TM1 inline float Delay<TM2>::delay() const { return mDelayLength; }
 
+TM1 inline void Delay<TM2>::delaySamples(uint32_t v){ mDelay = v << this->fracBits(); }
+
+TM1 inline uint32_t Delay<TM2>::delaySamples() const { return mDelay >> this->fracBits(); }
+
+TM1 inline void Delay<TM2>::delayUnit(float v){ mDelay = unitToUInt(v); }
+
 TM1 inline float Delay<TM2>::delayUnit() const {
 	return uintToUnit<float>(mDelay);
 }
-
-TM1 inline void Delay<TM2>::delayUnit(float n){ mDelay = unitToUInt(n); }
 
 TM1 inline uint32_t Delay<TM2>::delayIndex(uint32_t delay) const {
 	return this->index(mPhase - (delay << this->fracBits()));

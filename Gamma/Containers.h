@@ -8,6 +8,8 @@
 	Dynamically sizable generic containers.
 */
 
+/// \defgroup Containers
+
 #include <stdlib.h>
 #include <vector>
 #include <map>
@@ -20,7 +22,9 @@
 namespace gam{
 
 
-/// Size functor for ArrayPow2
+///Size functor for ArrayPow2
+    
+///\ingroup Containers
 struct SizeArrayPow2{
 	SizeArrayPow2(uint32_t size){ (*this)(size); }
 	uint32_t operator()() const { return (1<<mBitsI) & 0xfffffffe/*avoids 1*/; }
@@ -32,6 +36,8 @@ struct SizeArrayPow2{
 
 
 /// Size functor for Array
+    
+/// \ingroup Containers
 struct SizeArray{
 	SizeArray(uint32_t size): mSize(size){}
 	uint32_t operator()() const { return mSize; }
@@ -46,6 +52,9 @@ struct SizeArray{
 /// When the array is resized, if the elements are class-types, then their
 /// default constructors are called and if the elements are non-class-types,
 /// then they are left uninitialized.
+    
+/// \ingroup Containers
+    
 template <class T, class S, class A=gam::Allocator<T> >
 class ArrayBase : private A{
 public:
@@ -55,19 +64,19 @@ public:
 
 	/// Constructor that allocates memory, but does not initialize elements
 
-	/// @param[in] size		number of elements to allocate
+	/// \param[in] size		number of elements to allocate
 	///
 	explicit ArrayBase(uint32_t size);
 
-	/// @param[in] size		number of elements to allocate
-	/// @param[in] init		value to initialize all elements to
+	/// \param[in] size		number of elements to allocate
+	/// \param[in] init		value to initialize all elements to
 	ArrayBase(uint32_t size, const T& init);
 
-	/// @param[in] src		external array to reference
-	/// @param[in] size		size of external array
+	/// \param[in] src		external array to reference
+	/// \param[in] size		size of external array
 	ArrayBase(T * src, uint32_t size);
 
-	/// @param[in] src		external array to reference
+	/// \param[in] src		external array to reference
 	explicit ArrayBase(ArrayBase<T,S,A>& src);
 
 	virtual ~ArrayBase();
@@ -88,10 +97,10 @@ public:
 
 	/// Sets linear slice of elements to value
 	
-	/// @param[in] v		value to be copied as new content
-	/// @param[in] end		end index (exclusive)
-	/// @param[in] stride	index stride amount
-	/// @param[in] start	start index (inclusive)
+	/// \param[in] v		value to be copied as new content
+	/// \param[in] end		end index (exclusive)
+	/// \param[in] stride	index stride amount
+	/// \param[in] start	start index (inclusive)
 	ArrayBase& assign(const T& v, uint32_t end, uint32_t stride=1, uint32_t start=0);
 
 
@@ -151,6 +160,8 @@ private: ArrayBase& operator=(const ArrayBase& v);
 
 
 /// Resizable array
+    
+/// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 class Array : public ArrayBase<T, SizeArray, A>{
 public:
@@ -169,7 +180,9 @@ private: Array& operator=(const Array& v);
 
 
 
-/// Resizable array with a power-of-2 number of elements
+///Resizable array with a power-of-2 number of elements
+    
+///\ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 class ArrayPow2 : public ArrayBase<T, SizeArrayPow2, A>{
 public:
@@ -200,14 +213,16 @@ private: ArrayPow2& operator=(const ArrayPow2& v);
 
 
 /// Ring buffer
+    
+/// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 class Ring : public Array<T,A> {
 public:
 
 	typedef Array<T,A> Base; using Base::elems; using Base::size;
 
-	/// @param[in]	size		Number of elements in ring.
-	/// @param[in]	value		Initial value of all elements.
+	/// \param[in]	size		Number of elements in ring.
+	/// \param[in]	value		Initial value of all elements.
 	explicit Ring(uint32_t size=0, const T& value=T());
 
 	/// Returns reference to backmost (oldest) element
@@ -242,40 +257,6 @@ public:
 protected:
 	uint32_t mPos;
 	void incPos();
-};
-
-
-/// Ring buffer that keeps track of its fill amount
-template <class T, class A=gam::Allocator<T> >
-class RingFill : public Ring<T,A> {
-public:
-	typedef Ring<T,A> Base;
-	
-	/// @param[in]	size		Number of elements in ring
-	/// @param[in]	value		Initial value of all elements
-	explicit RingFill(uint32_t size=0, const T& value=T())
-	:	Base(size, value), mFill(0)
-	{}
-
-	/// Write new element
-	void operator()(const T& v){
-		this->Base::operator()(v);
-		if(mFill < Base::size()) ++mFill;
-	}
-	
-	/// Reset internal tap and fill amount to zero
-	void reset(){ mFill=0; Base::reset(); }
-	
-	/// Returns current fill amount of buffer
-	
-	/// The fill amount is the number of elements written to the buffer since
-	/// the last call to reset(). The fill amount has a maximum value equal
-	/// to the size of the buffer.
-	uint32_t fill() const { return mFill; }
-	
-protected:
-	uint32_t mFill;
-	virtual void onResize(){ reset(); }
 };
 
 
@@ -321,14 +302,15 @@ protected:
 
 
 
-
 /// N-sample delay
+    
+/// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 struct DelayN: public Ring<T,A>{
 	using Ring<T,A>::incPos; using Ring<T,A>::pos;
 
-	/// @param[in]	size		Delay size, greater than 0
-	/// @param[in]	value		Initial value of all elements
+	/// \param[in]	size		Delay size, greater than 0
+	/// \param[in]	value		Initial value of all elements
 	explicit DelayN(uint32_t size, const T& value=T())
 	:	Ring<T,A>(size, value)
 	{}
@@ -352,37 +334,43 @@ struct DelayN: public Ring<T,A>{
 
 // ArrayBase
 
-#define TEM3 template <class T, class S, class A>
 #define ARRAYBASE_INIT mElems(0), mSize(0)
 
-TEM3 ArrayBase<T,S,A>::ArrayBase()
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase()
 :	ARRAYBASE_INIT{}
 
-TEM3 ArrayBase<T,S,A>::ArrayBase(uint32_t sz)
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase(uint32_t sz)
 :	ARRAYBASE_INIT
 {	resize(sz); }
 
-TEM3 ArrayBase<T,S,A>::ArrayBase(uint32_t sz, const T& initial)
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase(uint32_t sz, const T& initial)
 :	ARRAYBASE_INIT
 {	resize(sz); assign(initial); }
 
-TEM3 ArrayBase<T,S,A>::ArrayBase(T * src, uint32_t sz)
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase(T * src, uint32_t sz)
 :	ARRAYBASE_INIT
 {	source(src, sz); }
 
-TEM3 ArrayBase<T,S,A>::ArrayBase(ArrayBase<T,S,A>& src)
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase(ArrayBase<T,S,A>& src)
 :	ARRAYBASE_INIT
 {	source(src); }
 
 #undef ARRAYBASE_INIT
 
-TEM3 ArrayBase<T,S,A>::~ArrayBase(){ clear(); }
+template <class T, class S, class A>
+ArrayBase<T,S,A>::~ArrayBase(){ clear(); }
 
-TEM3 ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(const T& v){
+template <class T, class S, class A>
+ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(const T& v){
 	return assign(v, size());
 }
 
-TEM3
+template <class T, class S, class A>
 template <class Arr>
 ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(const Arr& src){
 	unsigned N = src.size();
@@ -391,20 +379,26 @@ ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(const Arr& src){
 	return *this;
 }
 
-TEM3 ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(
+template <class T, class S, class A>
+ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(
 	const T& v, uint32_t end, uint32_t stride, uint32_t start
 ){
 	for(uint32_t i=start; i<end; i+=stride) A::construct(mElems+i, v);
 	return *this;
 }
 
-TEM3 inline T& ArrayBase<T,S,A>::operator[](uint32_t i){ return elems()[i]; }
-TEM3 inline const T& ArrayBase<T,S,A>::operator[](uint32_t i) const { return elems()[i]; }
+template <class T, class S, class A>
+inline T& ArrayBase<T,S,A>::operator[](uint32_t i){ return elems()[i]; }
+template <class T, class S, class A>
+inline const T& ArrayBase<T,S,A>::operator[](uint32_t i) const { return elems()[i]; }
 
-TEM3 inline T * ArrayBase<T,S,A>::elems(){ return mElems; }
-TEM3 inline const T * ArrayBase<T,S,A>::elems() const { return mElems; }
+template <class T, class S, class A>
+inline T * ArrayBase<T,S,A>::elems(){ return mElems; }
+template <class T, class S, class A>
+inline const T * ArrayBase<T,S,A>::elems() const { return mElems; }
 
-TEM3 void ArrayBase<T,S,A>::clear(){ //printf("ArrayBase::clear(): mElems=%p\n", mElems);
+template <class T, class S, class A>
+void ArrayBase<T,S,A>::clear(){ //printf("ArrayBase::clear(): mElems=%p\n", mElems);
 	
 	// We will only attempt to deallocate the data if it exists and is being 
 	// managed (reference counted) by ArrayBase.
@@ -420,7 +414,8 @@ TEM3 void ArrayBase<T,S,A>::clear(){ //printf("ArrayBase::clear(): mElems=%p\n",
 	}
 }
 
-TEM3 void ArrayBase<T,S,A>::own(){	
+template <class T, class S, class A>
+void ArrayBase<T,S,A>::own(){
 	T * oldElems = elems();
 	
 	// If we are not the sole owner, do nothing...
@@ -432,15 +427,18 @@ TEM3 void ArrayBase<T,S,A>::own(){
 	}
 }
 
-TEM3 bool ArrayBase<T,S,A>::isSoleOwner() const {
+template <class T, class S, class A>
+bool ArrayBase<T,S,A>::isSoleOwner() const {
 	return references((T*)elems()) == 1;
 }
 
-TEM3 bool ArrayBase<T,S,A>::usingExternalSource() const {
+template <class T, class S, class A>
+bool ArrayBase<T,S,A>::usingExternalSource() const {
 	return elems() && !managing((T*)elems());
 }
 
-TEM3 void ArrayBase<T,S,A>::resize(uint32_t newSize, const T& c){
+template <class T, class S, class A>
+void ArrayBase<T,S,A>::resize(uint32_t newSize, const T& c){
 //printf("ArrayBase::resize() %p\n", this);
 	newSize = mSize.convert(newSize);
 
@@ -478,13 +476,16 @@ TEM3 void ArrayBase<T,S,A>::resize(uint32_t newSize, const T& c){
 	//printf("ArrayBase::resize(): mElems=%p, size=%d\n", mElems, size());
 }
 
-TEM3 inline uint32_t ArrayBase<T,S,A>::size() const { return mSize(); }
+template <class T, class S, class A>
+inline uint32_t ArrayBase<T,S,A>::size() const { return mSize(); }
 
-TEM3 void ArrayBase<T,S,A>::source(ArrayBase<T,S,A>& src){
+template <class T, class S, class A>
+void ArrayBase<T,S,A>::source(ArrayBase<T,S,A>& src){
 	source(src.elems(), src.size());
 }
 
-TEM3 void ArrayBase<T,S,A>::source(T * src, uint32_t size){
+template <class T, class S, class A>
+void ArrayBase<T,S,A>::source(T * src, uint32_t size){
 	clear();
 	if(managing(src)){
 		++refCount()[src];
@@ -494,22 +495,28 @@ TEM3 void ArrayBase<T,S,A>::source(T * src, uint32_t size){
 	onResize();
 }
 
-#undef TEM3
-
-
-#define TEM template<class T, class A>
-
 // ArrayPow2
 
-TEM inline uint32_t ArrayPow2<T,A>::oneIndex() const { return 1<<fracBits(); }
-TEM inline uint32_t ArrayPow2<T,A>::log2Size() const { return mSize.mBitsI; }
-TEM inline uint32_t ArrayPow2<T,A>::fracBits() const { return mSize.mBitsF; }
-TEM inline uint32_t ArrayPow2<T,A>::index(uint32_t phase) const { return phase >> fracBits(); }
+template<class T, class A>
+inline uint32_t ArrayPow2<T,A>::oneIndex() const { return 1<<fracBits(); }
 
-TEM inline const T& ArrayPow2<T,A>::atPhase(uint32_t phase) const { return (*this)[index(phase)]; }
-TEM inline void ArrayPow2<T,A>::putPhase(uint32_t phase, T v){ (*this)[index(phase)] = v; }
+template<class T, class A>
+inline uint32_t ArrayPow2<T,A>::log2Size() const { return mSize.mBitsI; }
 
-TEM inline float ArrayPow2<T,A>::fraction(uint32_t phase) const{		
+template<class T, class A>
+inline uint32_t ArrayPow2<T,A>::fracBits() const { return mSize.mBitsF; }
+    
+template<class T, class A>
+inline uint32_t ArrayPow2<T,A>::index(uint32_t phase) const { return phase >> fracBits(); }
+
+template<class T, class A>
+inline const T& ArrayPow2<T,A>::atPhase(uint32_t phase) const { return (*this)[index(phase)]; }
+
+template<class T, class A>
+inline void ArrayPow2<T,A>::putPhase(uint32_t phase, T v){ (*this)[index(phase)] = v; }
+
+template<class T, class A>
+inline float ArrayPow2<T,A>::fraction(uint32_t phase) const{
 	return gam::fraction(log2Size(), phase);
 }
 
@@ -517,14 +524,17 @@ TEM inline float ArrayPow2<T,A>::fraction(uint32_t phase) const{
 
 //---- Ring
 
-TEM Ring<T,A>::Ring(uint32_t size, const T& v) : Array<T,A>(size,v), mPos(size-1){}
+template<class T, class A>
+Ring<T,A>::Ring(uint32_t size, const T& v) : Array<T,A>(size,v), mPos(size-1){}
 
-TEM inline void Ring<T,A>::operator()(const T& v){
+template<class T, class A>
+inline void Ring<T,A>::operator()(const T& v){
 	incPos();				// inc write pos; do first to avoid out-of-bounds access
 	(*this)[pos()] = v;		// write new element
 }
 
-TEM void Ring<T,A>::copy(T * dst, uint32_t len, uint32_t delay) const{
+template<class T, class A>
+void Ring<T,A>::copy(T * dst, uint32_t len, uint32_t delay) const{
 	// pos() points to most recently written slot
 	//uint32_t tap = (pos() - delay) % size();
 	uint32_t tap = (uint32_t)scl::wrap((int32_t)pos() - (int32_t)delay, (int32_t)size());
@@ -537,34 +547,45 @@ TEM void Ring<T,A>::copy(T * dst, uint32_t len, uint32_t delay) const{
 	mem::copyFromRing(elems(), size(), tap, dst, len);
 }
 
-TEM void Ring<T,A>::copyUnwrap(T * dst, uint32_t len) const { copy(dst, len, size() - 1); }
+template<class T, class A>
+void Ring<T,A>::copyUnwrap(T * dst, uint32_t len) const { copy(dst, len, size() - 1); }
 
-TEM inline uint32_t Ring<T,A>::indexBack() const {
+template<class T, class A>
+inline uint32_t Ring<T,A>::indexBack() const {
 	uint32_t i = pos() + 1;
 	return (i != size()) ? i : 0;
 }
 
-TEM inline uint32_t Ring<T,A>::indexFront() const { return pos(); }
+template<class T, class A>
+inline uint32_t Ring<T,A>::indexFront() const { return pos(); }
 
-TEM inline uint32_t Ring<T,A>::indexPrev(uint32_t v) const {
+template<class T, class A>
+inline uint32_t Ring<T,A>::indexPrev(uint32_t v) const {
 	return scl::wrapOnce<int>(pos() - v, size());
 }
 
-TEM inline uint32_t Ring<T,A>::pos() const { return mPos; }
-TEM inline bool Ring<T,A>::reachedEnd() const { return pos() == (size()-1); }
+template<class T, class A>
+inline uint32_t Ring<T,A>::pos() const { return mPos; }
+    
+template<class T, class A>
+inline bool Ring<T,A>::reachedEnd() const { return pos() == (size()-1); }
 
-TEM inline void Ring<T,A>::incPos(){ if(++mPos >= size()) mPos = 0; }
-TEM void Ring<T,A>::pos(uint32_t index){ mPos = index; }
+template<class T, class A>
+inline void Ring<T,A>::incPos(){ if(++mPos >= size()) mPos = 0; }
+    
+template<class T, class A>
+void Ring<T,A>::pos(uint32_t index){ mPos = index; }
 
-TEM void Ring<T,A>::reset(){ pos(size()-1); }
+template<class T, class A>
+void Ring<T,A>::reset(){ pos(size()-1); }
 
-TEM	inline void Ring<T,A>::writeClip(const T& v){
+template<class T, class A>
+inline void Ring<T,A>::writeClip(const T& v){
 	if(mPos < size()){
 		(*this)[mPos] = v;
 		mPos++;
 	}
 }
 
-#undef TEM
 } // gam::
 #endif

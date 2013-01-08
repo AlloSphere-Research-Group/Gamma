@@ -46,17 +46,24 @@ void audioCB(AudioIOData& io){
 
 int main(){
 
+	// check if we have any audio devices
+	if(AudioDevice::numDevices() == 0){
+		printf("Error: No audio devices detected. Exiting...\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// list all detected audio devices
+	printf("Audio devices found:\n");
+	AudioDevice::printAll();
+	printf("\n");
+
 	// set parameters of audio stream
 	int blockSize = 64;				// how many samples per block?
 	float sampleRate = 44100;		// sampling rate (samples/second)
 	int outputChannels = 2;			// how many output channels to open
 	int inputChannels = 1;			// how many input channels to open
 	UserData user = {-0.5, 0.5};	// external data to be passed into callback
-
-	printf("Audio devices found:\n");
-	AudioDevice::printAll();
-	printf("\n");
-
+	
 	// create an audio i/o object using default input and output devices
 	AudioIO io(blockSize, sampleRate, audioCB, &user, outputChannels, inputChannels);
 
@@ -69,6 +76,15 @@ int main(){
 	//io.deviceIn (AudioDevice("Microphone", AudioDevice::INPUT));
 	//io.deviceOut(AudioDevice("Built-in", AudioDevice::OUTPUT));
 
+	if(io.channelsOut() < 2){
+		printf("This example needs at least 2 output channels to start streaming. Exiting...\n");
+		return 0;
+	}
+	if(io.channelsIn() < 1){
+		printf("This example needs at least 1 input channel to start streaming. Exiting...\n");
+		return 0;
+	}
+	
 	// set the global sample rate "subject"
 	Sync::master().spu(io.framesPerSecond());
 	

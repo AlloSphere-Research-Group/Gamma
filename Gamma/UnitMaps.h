@@ -22,7 +22,7 @@ template<
 	class Sacc=acc::Wrap,
 	class A=gam::Allocator<T>
 >
-class FunctionTable : public Array<T,A>{
+class LookupTable : public Array<T,A>{
 	typedef Array<T,A> Base;
 public:
 	using Base::elems; using Base::size;
@@ -30,15 +30,15 @@ public:
 
 	/// Constructor that allocates an internal table
 
-	/// @param[in] size		Number of elements (actual number is power of 2 ceiling)
-	/// @param[in] init		Initial value of elements
-	explicit FunctionTable(uint32_t size=2048, const T& init=T(0))
+	/// \param[in] size		Number of elements (actual number is power of 2 ceiling)
+	/// \param[in] init		Initial value of elements
+	explicit LookupTable(uint32_t size=2048, const T& init=T(0))
 	:	Base(size, init)
 	{
 		endpoints(0, size);
 	}
 	
-	virtual ~FunctionTable(){}
+	virtual ~LookupTable(){}
 	
 	/// Get array
 	Array<T,A>& array(){ return *this; }
@@ -51,8 +51,8 @@ public:
 		double f;
 //		index_t i1 = mIndMap(x, f);
 //		return mIpl(mAcc, *this, i1,f, size()-1);
-		index_t i1 = mIndMap(x, f) + mInterval.min();
-		return mIpl(mAcc, *this, i1,f, mInterval.max(), mInterval.min());
+		index_t i1 = mIndMap(x, f) + mIMin;
+		return mIpl(mAcc, *this, i1,f, mIMax, mIMin);
 
 		//int i2 = i1+1; if(i2==size()) i2=0;
 		//return (*this)[i1]*(1.f-f) + (*this)[i2]*f;
@@ -60,29 +60,35 @@ public:
 
 
 	/// Set indexing interval for look-up [min, max)
-	FunctionTable& endpoints(index_t min, index_t max){
-		mInterval.endpoints(min, max-1); // interpolator max index is inclusive
-		mIndMap.max(max-min, 1.);
+	LookupTable& endpoints(index_t min, index_t max){
+		if(min < max){
+			mIMin = min;
+			mIMax = max-1; // make index inclusive
+		}else{
+			mIMin = max;
+			mIMax = min-1; // make index inclusive
+		}
+		mIndMap.max((mIMax+1)-mIMin, 1.);
 		return *this;
 	}
 
 
 	/// Sums generator stream with table elements
 	template <class Gen>
-	FunctionTable& operator+=(Gen& g){
+	LookupTable& operator+=(Gen& g){
 		for(uint32_t i=0; i<size(); ++i) (*this)[i] += g();
 		return *this;
 	}
 
 	template <class Gen>
-	FunctionTable& operator+=(const Gen& g){
+	LookupTable& operator+=(const Gen& g){
 		for(uint32_t i=0; i<size(); ++i) (*this)[i] += g();
 		return *this;
 	}
 
 protected:
 	IndexMap<double> mIndMap;
-	Interval<index_t> mInterval;
+	index_t mIMin, mIMax; // min and max indices, inclusive
 	Sipl<T> mIpl;
 	Sacc mAcc;
 
@@ -106,7 +112,7 @@ public:
 
 	/// Read value using truncating interpolation
 	
-	/// @param[in] phase	phase value in [0,1)
+	/// \param[in] phase	phase value in [0,1)
 	///
 	const T& read(double phase) const {
 		return read(phaseR2I(phase));
@@ -224,11 +230,11 @@ public:
 
 	UnitMapper();
 	
-	/// @param[in] max		upper endpoint of interval
-	/// @param[in] min		lower endpoint of interval
-	/// @param[in] p1		mapping function function parameter
-	/// @param[in] type		mapping function
-	/// @param[in] clip		whether to clip values to interval
+	/// \param[in] max		upper endpoint of interval
+	/// \param[in] min		lower endpoint of interval
+	/// \param[in] p1		mapping function function parameter
+	/// \param[in] type		mapping function
+	/// \param[in] clip		whether to clip values to interval
 	UnitMapper(T max, T min=0., T p1=1., MapType type = MAP_POW, bool clip=true);
 
 

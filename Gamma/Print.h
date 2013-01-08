@@ -19,8 +19,6 @@ namespace gam{
 /// Returns an ASCII character most closely matching an intensity value in [0,1].
 char intensityToASCII(float v);
 
-template<class T> void print(const T& v, const char * post="\n", const char * pre="", FILE * fp=stdout);
-
 /// Prints 2D pixel array
 template<class T> void print2D(T* pix, int nx, int ny, FILE * fp=stdout);
 
@@ -35,11 +33,11 @@ void printHexArray(const float * table, uint32_t len, uint32_t valuesPerLine);
 
 /// Print signed unit value on a horizontal plot.
 
-/// @param[in]	value	Normalized value to plot
-/// @param[in]	width	Character width of plot excluding center point
-/// @param[in]	spaces	Print extra filling spaces to the right
-/// @param[in]	sign	Whether plot is signed
-/// @param[in]	point	The print character for points
+/// \param[in]	value	Normalized value to plot
+/// \param[in]	width	Character width of plot excluding center point
+/// \param[in]	spaces	Print extra filling spaces to the right
+/// \param[in]	sign	Whether plot is signed
+/// \param[in]	point	The print character for points
 void printPlot(float value, uint32_t width=50, bool spaces=true, bool sign=true, const char * point="o");
 
 /// Prints error messge to stderr and optionally calls exit()
@@ -61,15 +59,6 @@ inline char intensityToASCII(float v){
 	static const int N = sizeof(map)-1;
 	return map[int(N*scl::clip(v,0.9999999f))];
 }
-
-#define DEF(type, spec, val)\
-template<>\
-inline void print<type>(const type& v, const char * post, const char * pre, FILE * fp){\
-	fprintf(fp, "%s%"#spec"%s", pre, val, post);\
-}
-DEF(float, g, v) DEF(double, g, v) DEF(uint32_t, d, v) DEF(int, d, v)
-DEF(std::string, s, v.c_str())
-#undef DEF
 
 template<class T> void print2D(T* pix, int nx, int ny, FILE * fp){
 	for(int j=0; j<nx; ++j){
