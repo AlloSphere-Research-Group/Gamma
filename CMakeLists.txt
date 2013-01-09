@@ -22,6 +22,7 @@ add_library(Gamma ${GAMMA_SRC})
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # TODO: install targets
 # TODO: release/debug builds
@@ -46,8 +47,17 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH}) 
 include(FindHelper)
-find_helper(PORTAUDIO portaudio-2.0 portaudio.h portaudio)
-find_helper(LIBSNDFILE sndfile sndfile.h sndfile)
+
+find_package(Portaudio REQUIRED)
+include_directories(${Portaudio_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${Portaudio_LIBRARIES})
+find_package(LibSndFile REQUIRED)
+include_directories(${LibSndFile_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${LibSndFile_LIBRARIES})
+
+# This works on Linux but not OS X...
+#find_helper(PORTAUDIO portaudio-2.0 portaudio.h portaudio)
+#find_helper(LIBSNDFILE sndfile sndfile.h sndfile)
 
 # Examples
 # TODO make optional
