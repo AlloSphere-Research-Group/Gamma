@@ -24,6 +24,18 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   # Mac OS X specific code
+   message("Building on OS X")
+   find_library(AUDIOUNIT_FM AudioUnit)
+   find_library(COREAUDIO_FM CoreAudio)
+   find_library(CORESERVICES_FM CoreServices)
+   find_library(AUDIOTOOLBOX_FM AudioToolbox)
+   # message("AU ${AUDIOUNIT_FM}")
+   target_link_libraries(Gamma ${AUDIOUNIT_FM} ${COREAUDIO_FM} 
+		${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 # TODO: install targets
 # TODO: release/debug builds
 # TODO: allow choosing static or dynamic libraries
