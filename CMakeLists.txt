@@ -31,8 +31,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    find_library(COREAUDIO_FM CoreAudio)
    find_library(CORESERVICES_FM CoreServices)
    find_library(AUDIOTOOLBOX_FM AudioToolbox)
-   # message("AU ${AUDIOUNIT_FM}")
-   target_link_libraries(Gamma ${AUDIOUNIT_FM} ${COREAUDIO_FM} 
+   target_link_libraries(Gamma ${AUDIOUNIT_FM} ${COREAUDIO_FM}
 		${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
@@ -61,11 +60,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(FindHelper)
 
 find_package(Portaudio REQUIRED)
-include_directories(${Portaudio_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${Portaudio_LIBRARIES})
+message("-- Portaudio headers: ${PORTAUDIO_INCLUDE_DIRS}   ${PORTAUDIO_DEFINITIONS}")
 find_package(LibSndFile REQUIRED)
-include_directories(${LibSndFile_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LibSndFile_LIBRARIES})
+message("-- libsndfile headers: ${SNDFILE_INCLUDE_DIRS}")
+
+include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
+link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
+target_link_libraries(${PROJECT_NAME} ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES})
 
 # This works on Linux but not OS X...
 #find_helper(PORTAUDIO portaudio-2.0 portaudio.h portaudio)
