@@ -39,13 +39,13 @@ find_package(LibSndFile REQUIRED)
 message("-- libsndfile headers: ${SNDFILE_INCLUDE_DIRS}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
-link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
+#link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
 
-get_filename_component(PORTAUDIO_LIB_DIR ${PORTAUDIO_LIBRARIES} PATH)
-get_filename_component(SNDFILE_LIB_DIR ${SNDFILE_LIBRARIES} PATH)
+#get_filename_component(PORTAUDIO_LIB_DIR ${PORTAUDIO_LIBRARIES} PATH)
+#get_filename_component(SNDFILE_LIB_DIR ${SNDFILE_LIBRARIES} PATH)
 
-include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
-link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
+#include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
+#link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Needed by portaudio
@@ -56,7 +56,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    set(PA_FRAMEWORKS ${AUDIOUNIT_FM} ${COREAUDIO_FM} ${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-target_link_libraries(${PROJECT_NAME} ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
+target_link_libraries(Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
 
 # Examples
 set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral)
@@ -66,10 +66,6 @@ foreach(dir ${EXAMPLE_DIRS})
     get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
     add_executable(${dir}_${EXAMPLE_NAME} ${example})
     target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
-    if (apple)
-      find_library(AUDIOUNIT_FM AudioUnit)
-      target_link_libraries(${dir}_${EXAMPLE_NAME} ${AUDIOUNIT_FM})
-    endif()
   endforeach(example)
 endforeach(dir) 
 
