@@ -53,7 +53,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 target_link_libraries(Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
 
 # Install target
-install (TARGETS Gamma DESTINATION bin)
+install (TARGETS Gamma DESTINATION lib)
 set (GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
 Gamma/Allocator.h   Gamma/Filter.h       Gamma/SamplePlayer.h
 Gamma/arr.h         Gamma/FormantData.h  Gamma/Scheduler.h
