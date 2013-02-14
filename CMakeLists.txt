@@ -22,7 +22,7 @@ add_library(Gamma ${GAMMA_SRC})
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 
 # TODO: install targets
 # TODO: release/debug builds
@@ -51,6 +51,23 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 target_link_libraries(${PROJECT_NAME} ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
+
+# Install target
+install (TARGETS Gamma DESTINATION bin)
+set (GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
+Gamma/Allocator.h   Gamma/Filter.h       Gamma/SamplePlayer.h
+Gamma/arr.h         Gamma/FormantData.h  Gamma/Scheduler.h
+Gamma/AudioIO.h     Gamma/Gamma.h        Gamma/scl.h
+Gamma/Config.h      Gamma/gen.h          Gamma/SoundFile.h
+Gamma/Constants.h   Gamma/ipl.h          Gamma/Strategy.h
+Gamma/Containers.h  Gamma/mem.h          Gamma/Sync.h
+Gamma/Conversion.h  Gamma/Node.h         Gamma/tbl.h
+Gamma/Delay.h       Gamma/Noise.h        Gamma/Thread.h
+Gamma/DFT.h         Gamma/Oscillator.h   Gamma/Timer.h
+Gamma/Effects.h     Gamma/Print.h        Gamma/TransferFunc.h
+Gamma/Envelope.h    Gamma/pstdint.h      Gamma/Types.h
+Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
+install (FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Examples
 set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral)
