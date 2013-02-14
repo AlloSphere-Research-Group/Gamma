@@ -39,13 +39,7 @@ find_package(LibSndFile REQUIRED)
 message("-- libsndfile headers: ${SNDFILE_INCLUDE_DIRS}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
-link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
-
-get_filename_component(PORTAUDIO_LIB_DIR ${PORTAUDIO_LIBRARIES} PATH)
-get_filename_component(SNDFILE_LIB_DIR ${SNDFILE_LIBRARIES} PATH)
-
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
-link_directories(${PORTAUDIO_LIB_DIR} ${SNDFILE_LIB_DIR})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Needed by portaudio
