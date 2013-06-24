@@ -20,9 +20,9 @@ namespace gam{
 ///	The number of frames in the sample should not exceed 2^32. This equates
 ///	to 27 hours at 44.1 kHz.
 ///
-/// \tparam T	value (sample) type
-/// \tparam Si	interpolation strategy
-/// \tparam Sp	phase increment strategy
+/// \tparam T	Value (sample) type
+/// \tparam Si	Interpolation strategy
+/// \tparam Sp	Phase increment strategy
 template<
 	class T = real,
 	template<class> class Si = ipl::Trunc,
@@ -51,7 +51,10 @@ public:
 	explicit SamplePlayer(const Char * pathToSoundFile, double rate=1);
 
 
-	/// Load a sound file into internal buffer
+	/// Load a sound file into internal sample buffer
+	
+	/// \returns whether the sound file loaded properly
+	///
 	template<class Char>
 	bool load(const Char * pathToSoundFile);
 
@@ -68,10 +71,12 @@ public:
 	/// Set sample buffer
 	
 	/// \param[in] src		Sample buffer (if multichannel, must be deinterleaved)
-	/// \param[in] smpRate	Sample rate of samples
+	/// \param[in] frmRate	Frame rate of sample buffer.
+	///						If the sample is a wavetable, then this should be
+	///						its period, in frames.
 	/// \param[in] channels	Number of channels in sample buffer
-	void buffer(Array<T>& src, double smpRate, int channels);
-	
+	void buffer(Array<T>& src, double frmRate, int channels);
+
 	/// Set sample buffer
 	
 	/// \param[in] src		A source SamplePlayer from which to use the same 
@@ -79,25 +84,34 @@ public:
 	void buffer(SamplePlayer& src);
 
 	void free();							///< Free sample buffer (if owner)
-	void max(double v);						///< Set interval max, in frames
-	void min(double v);						///< Set interval min, in frames
+
+	void freq(double v){ rate(v); }			///< Set frequency if sample buffer is a wavetable
+	void max(double v);						///< Set playback interval max frame (open)
+	void min(double v);						///< Set playback interval min frame (closed)
 	void pos(double v);						///< Set current read position, in frames
 	void phase(double v);					///< Set current read position [0, 1)
 	void rate(double v);					///< Set playback rate scalar
 	void range(double phs, double period);	///< Set interval start phase and period
 	void reset();							///< Reset playback head
 
-	double max() const { return mMax; }		///< Get interval max
-	double min() const { return mMin; }		///< Get interval min
+
+	/// Whether sample playback has completed (non-looping only)
+	bool done() const;
+
+	int channels() const { return mChans; }	///< Get number of channels
+	double frameRate() const { return mFrameRate; } ///< Get frame rate of sample buffer
+	double freq() const { return rate(); }	///< Get frequency if sample buffer is a wavetable
+	double max() const { return mMax; }		///< Get playback interval max frame (open)
+	double min() const { return mMin; }		///< Get playback interval min frame (closed)
 	double period() const;					///< Get total period of sample data
 	double pos() const { return mPos; }		///< Get current read position, in frames
 	double posInInterval(double frac) const;///< Get position from fraction within interval
 	double rate() const { return mRate; }	///< Get playback rate
-	double sampleRate() const { return mSampleRate; } ///< Get sample rate of sample buffer
 
-	int channels() const { return mChans; }	///< Get number of channels
+	/// Get whether the sample buffer is valid for playback
+	bool valid() const;
 
-	virtual void onResync(double r){ sampleRate(mSampleRate); }
+	virtual void onResync(double r){ frameRate(mFrameRate); }
 
 protected:	
 	static T * defaultBuffer(){
@@ -109,12 +123,13 @@ protected:
 	Sp mPhsInc;
 
 	double mPos, mInc;			// real index position and increment
-	double mSampleRate;			// sample rate of array data
+	double mFrameRate;			// frame rate of array data
 	int mChans;					// number of channels
-	double mRate, mMin, mMax;
+	double mRate;				// playback rate factor
+	double mMin, mMax;			// [min, max) playback interval, in frames
 	
-	void sampleRate(double v){
-		mSampleRate = v;
+	void frameRate(double v){
+		mFrameRate = v;
 		rate(mRate);
 	}
 
@@ -129,7 +144,7 @@ protected:
 PRE CLS::SamplePlayer()
 :	Array<T>(defaultBuffer(), 1),
 	mPos(0), mInc(0),
-	mSampleRate(1), mChans(1),
+	mFrameRate(1), mChans(1),
 	mRate(1), mMin(0), mMax(1)
 {}
 
@@ -137,18 +152,18 @@ PRE CLS::SamplePlayer()
 PRE CLS::SamplePlayer(SamplePlayer<T>& src, double rate)
 :	Array<T>(src), 
 	mPos(0), mInc(1), 
-	mSampleRate(src.sampleRate()), mChans(src.channels()), 
+	mFrameRate(src.frameRate()), mChans(src.channels()), 
 	mRate(rate), mMin(0), mMax(src.size())
 {	initSynced(); }
 
 PRE CLS::SamplePlayer(Array<T>& src, double smpRate, double rate)
 :	Array<T>(src),
 	mPos(0), mInc(1),
-	mSampleRate(smpRate), mChans(1),
+	mFrameRate(smpRate), mChans(1),
 	mRate(rate), mMin(0), mMax(src.size())
 {
 	initSynced();
-	sampleRate(smpRate);
+	frameRate(smpRate);
 }
 
 PRE
@@ -169,7 +184,7 @@ bool CLS::load(const Char * pathToSoundFile){
 	if(sf.openRead()){
 		Array<T>::resize(sf.samples());
 		sf.readAllD(elems());
-		sampleRate(sf.frameRate());
+		frameRate(sf.frameRate());
 		mChans = sf.channels();
 		mMin = 0;
 		mMax = frames();
@@ -181,7 +196,7 @@ bool CLS::load(const Char * pathToSoundFile){
 	return false;
 }
 
-PRE void CLS::advance(){
+PRE inline void CLS::advance(){
 	mPos = mPhsInc(pos(), mInc, max(), min()); // update read position, in frames
 }
 
@@ -195,13 +210,13 @@ PRE inline T CLS::read(int channel) const {
 	uint32_t posi = uint32_t(pos());
 	int Nframes= frames();
 	int offset = channel*Nframes;
-	return mIpol(*this, posi+offset, pos()-posi, offset+Nframes-1, offset);
+	return mIpol(elems(), posi+offset, pos()-posi, offset+Nframes-1, offset);
 }
 
 
 PRE void CLS::buffer(Array<T>& src, double smpRate, int channels){
 	this->source(src);
-	sampleRate(smpRate);	// sets mSampleRate, mRate, and mInc
+	frameRate(smpRate);	// sets mFrameRate, mRate, and mInc
 	mChans = channels;
 	mMin = 0;
 	mMax = frames();
@@ -209,39 +224,52 @@ PRE void CLS::buffer(Array<T>& src, double smpRate, int channels){
 }
 
 PRE void CLS::buffer(SamplePlayer& src){
-	buffer(src, src.sampleRate(), src.channels());
+	buffer(src, src.frameRate(), src.channels());
 }
 
 PRE inline void CLS::pos(double v){	mPos = v; }
 
 PRE inline void CLS::phase(double v){ pos(v * frames()); }
 
-PRE inline void CLS::min(double v){	mMin = scl::clip<double>(v, frames()); }	
+PRE void CLS::min(double v){ mMin = scl::clip<double>(v, mMax, 0.); }	
 
-PRE inline void CLS::max(double v){ mMax = scl::clip<double>(v, frames()); }
+PRE void CLS::max(double v){ mMax = scl::clip<double>(v, frames(), mMin); }
 
 PRE void CLS::free(){ this->freeElements(); }
 
 PRE inline void CLS::rate(double v){
 	mRate = v;
-	mInc = v * mSampleRate * ups();
+	mInc = v * frameRate() * ups();
 }
 
-PRE inline void CLS::range(double posn, double period){
+PRE void CLS::range(double posn, double period){
 	phase(posn);
 	min(pos());
 	max(pos() + period * spu());	
 }
 
-PRE inline void CLS::reset(){
+PRE void CLS::reset(){
 	pos(rate()<0 ? max() : min());
 	mPhsInc.reset();
+}
+
+PRE inline bool CLS::done() const{
+	if(rate() >= 0.){
+		return pos() >= (max() - 1);
+	}
+	else{
+		return pos() <= min();
+	}
 }
 
 PRE inline double CLS::period() const { return frames() * ups(); }
 
 PRE inline double CLS::posInInterval(double frac) const {
 	return min() + (max() - min()) * frac;
+}
+
+PRE bool CLS::valid() const {
+	return this->mElems && (this->mElems != defaultBuffer());
 }
 
 #undef PRE
