@@ -22,35 +22,20 @@ The source code can either be built into a library or directly compiled from sou
 2.1 Building a Library
 ----------------------------------------
 
-### Make (Linux, OS X)
+Gamma uses Cmake to build. You should be able to build Gamma by running
 
-In most cases, simply running
-
+	cmake .
 	make
 
-will build the library with automatically detected platform settings. See Makefile.config for other build options.
+will build the library and the examples with automatically detected platform settings. You will need to install dependencies detailed in section 2.3 below.
 
-There are several other rules within Makefile. These are:
+On OS X an Xcode project can be produced by running Cmake like this:
 
-	make			- builds static library
-	make install		- installs library into DESTDIR
-	make clean		- removes binaries from build folder
-	make examples/y/x.cpp	- builds and runs example source file y/x.cpp
-	make test		- performs unit tests
+	cmake -G Xcode .
 
-The rule that builds examples will automatically run the executable by default. To turn this off, pass AUTORUN=0 to make. The examples rule follows standard Unix conventions so that, for instance, all the examples can be built and run by typing the command 
+(You may need to delete old CMakeCache.txt and the CMakeFiles directory manually)
 
-	make examples/*/*.cpp
-
-Binaries are located in the directory ./build/. On OSX, the Gamma library will be linked to the pre-compiled dependent libraries in external/lib_osx. On Linux, use apt-get to install the necessary dependent libraries (see 2.3 below).
-
-
-### Xcode (OS X)
-
-1. Open project/xcode/gamma.xcodeproj
-2. Build the target 'libgamma{.a, .dylib}'. The library will be in project build folder.
-
-
+Binaries are located in the directory ./build .
 
 2.2 Compiling Direct From Source
 ----------------------------------------
@@ -67,4 +52,8 @@ Make sure to pass in the following flags to the compiler:
 2.3 Dependencies
 ----------------------------------------
 Gamma depends on PortAudio v19 and libsndfile for performing audio and sound file i/o, respectively. They are required only if using certain Gamma classes. PortAudio is required ONLY if you are using AudioIO (AudioIO.h). libsndfile is required ONLY for SoundFile i/o and playback (SoundFile.h, Player.h).
+
+You will also need Cmake to build Gamma. 
+
+You can get these through standard package managers on Linux, or through MacPorts or HomeBrew on OS X.
 
