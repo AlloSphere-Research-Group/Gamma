@@ -17,9 +17,8 @@ set(GAMMA_SRC src/arr.cpp
   src/SoundFile.cpp
   src/Sync.cpp)
 
-include_directories(../Gamma/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_library(Gamma ${GAMMA_SRC})
-
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
