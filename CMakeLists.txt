@@ -23,12 +23,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 
-# TODO: install targets
-# TODO: release/debug builds
 # TODO: allow choosing static or dynamic libraries
-# TODO: allow choosing architecture 64 vs. 32 bits on 64 bit platforms (e.g. OS X)
-# TODO make examples optional
-# TODO make unit tests optional
 
 # Dependencies
 
@@ -38,7 +33,6 @@ find_package(LibSndFile REQUIRED)
 message("-- libsndfile headers: ${SNDFILE_INCLUDE_DIRS}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
-#include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Needed by portaudio
@@ -69,6 +63,7 @@ Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
 install (FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Examples
+if(NOT NO_EXAMPLES)
 set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral)
 foreach(dir ${EXAMPLE_DIRS})
   file(GLOB EXAMPLE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} examples/${dir}/*.cpp)
@@ -78,8 +73,10 @@ foreach(dir ${EXAMPLE_DIRS})
     target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
   endforeach(example)
 endforeach(dir) 
+endif(NOT NO_EXAMPLES)
 
 # Unit tests
-# TODO make optional
+if(GAMMA_TEST)
 add_executable(unitTests tests/unitTests.cpp)
 target_link_libraries(unitTests Gamma portaudio sndfile ${PA_FRAMEWORKS})
+endif(GAMMA_TEST)
