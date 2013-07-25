@@ -1,0 +1,2 @@
+rm -rf build/ CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile build.ninja rules.ninja Gamma.xcodeproj Gamma.build CMakeScripts
+
