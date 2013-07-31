@@ -67,7 +67,7 @@ install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Examples
 if(NOT NO_EXAMPLES)
-set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral)
+set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
 foreach(dir ${EXAMPLE_DIRS})
   file(GLOB EXAMPLE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} examples/${dir}/*.cpp)
   foreach(example ${EXAMPLE_FILES})
@@ -112,6 +112,7 @@ foreach(dir ${PROJECT_DIRS})
     message("Building project: " ${dir} "/" ${PROJECT_NAME})
     target_link_libraries(${PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
     list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
+#    add_custom_command(TARGET ${project_src} POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/build/projects/${dir}/${PROJECT_NAME})
   endforeach(project_src)
 
   foreach(FILENAME ${PROJECT_RES_FILES})
