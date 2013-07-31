@@ -1,5 +1,8 @@
-cmake_minimum_required (VERSION 2.8)
-project (Gamma)
+cmake_minimum_required(VERSION 2.8)
+project(Gamma)
+
+message("Building Gamma.")
+set(CMAKE_BUILD_TYPE Release)
 
 # Gamma Library
 set(GAMMA_SRC src/arr.cpp
@@ -21,7 +24,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_library(Gamma ${GAMMA_SRC})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/bin)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 
 # TODO: allow choosing static or dynamic libraries
 
@@ -60,7 +63,7 @@ Gamma/DFT.h         Gamma/Oscillator.h   Gamma/Timer.h
 Gamma/Effects.h     Gamma/Print.h        Gamma/TransferFunc.h
 Gamma/Envelope.h    Gamma/pstdint.h      Gamma/Types.h
 Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
-install (FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
+install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Examples
 if(NOT NO_EXAMPLES)
@@ -74,6 +77,54 @@ foreach(dir ${EXAMPLE_DIRS})
   endforeach(example)
 endforeach(dir) 
 endif(NOT NO_EXAMPLES)
+
+# Projects
+if(NOT NO_PROJECTS)
+# macro to get subdirectories
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+        SET(dirlist ${dirlist} ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
+subdirlist(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/projects)
+#include root projects directory
+list(APPEND PROJECT_DIRS ".")
+foreach(dir ${PROJECT_DIRS})
+  file(GLOB PROJECT_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} projects/${dir}/*.cpp)
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/projects/${dir}/flags.txt)
+    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/projects/${dir}/flags.txt EXTRA_COMPILER_FLAGS)
+    message("WARNING: Using additional flags from /projects/${dir}/flags.txt: " ${EXTRA_COMPILER_FLAGS})
+  endif()
+
+# Get a list of all files, later remove all .cpp and .h and you're left with the resources to copy
+  file(GLOB PROJECT_RES_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} projects/${dir}/*)
+
+  foreach(project_src ${PROJECT_FILES})
+    get_filename_component(PROJECT_NAME ${project_src} NAME_WE) # Get name w/o extension
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/projects/${dir})
+    add_executable(${PROJECT_NAME} ${project_src})
+    message("Building project: " ${dir} "/" ${PROJECT_NAME})
+    target_link_libraries(${PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
+    list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
+  endforeach(project_src)
+
+  foreach(FILENAME ${PROJECT_RES_FILES})
+    set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}")
+    set(DST "${CMAKE_SOURCE_DIR}/build/${FILENAME}")
+    if(NOT (IS_DIRECTORY ${SRC}))
+      configure_file(${SRC} ${DST} COPY_ONLY)
+      message("Copying: " ${SRC})
+    endif(NOT (IS_DIRECTORY ${SRC}))
+  endforeach(FILENAME)
+endforeach(dir)
+
+endif(NOT NO_PROJECTS)
 
 # Unit tests
 if(GAMMA_TEST)
