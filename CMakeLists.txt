@@ -65,7 +65,7 @@ Gamma/Envelope.h    Gamma/pstdint.h      Gamma/Types.h
 Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
-# Examples
+# Examples -----------------------------------------------
 if(NOT NO_EXAMPLES)
 set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
 foreach(dir ${EXAMPLE_DIRS})
@@ -74,12 +74,13 @@ foreach(dir ${EXAMPLE_DIRS})
     get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
     add_executable(${dir}_${EXAMPLE_NAME} ${example})
     target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
+    add_custom_target("gamma_${PROJECT_NAME}" DEPENDS ${PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${PROJECT_NAME}")
   endforeach(example)
 endforeach(dir) 
 endif(NOT NO_EXAMPLES)
 
-# Projects
-if(NOT NO_PROJECTS)
+# Projects -----------------------------------------------
+if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
 # macro to get subdirectories
 MACRO(SUBDIRLIST result curdir)
   FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
@@ -109,10 +110,10 @@ foreach(dir ${PROJECT_DIRS})
     get_filename_component(PROJECT_NAME ${project_src} NAME_WE) # Get name w/o extension
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/projects/${dir})
     add_executable(${PROJECT_NAME} ${project_src})
-    message("Building project: " ${dir} "/" ${PROJECT_NAME})
+    message("Building project: projects_${PROJECT_NAME}")
     target_link_libraries(${PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
     list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
-#    add_custom_command(TARGET ${project_src} POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/build/projects/${dir}/${PROJECT_NAME})
+    add_custom_target("project_${PROJECT_NAME}" DEPENDS ${PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${PROJECT_NAME}")
   endforeach(project_src)
 
   foreach(FILENAME ${PROJECT_RES_FILES})
