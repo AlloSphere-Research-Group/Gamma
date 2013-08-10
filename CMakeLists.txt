@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 2.2)
-set(CMAKE_BACKWARDS_COMPATIBILITY "2.2") # to allow slash character in targets
+cmake_minimum_required(VERSION 2.8)
 project(Gamma)
 
 message("Building Gamma.")
@@ -32,9 +31,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 # Dependencies
 
 find_package(Portaudio REQUIRED)
-message("-- Portaudio headers: ${PORTAUDIO_INCLUDE_DIRS}   ${PORTAUDIO_DEFINITIONS}")
+message("-- Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
 find_package(LibSndFile REQUIRED)
-message("-- libsndfile headers: ${SNDFILE_INCLUDE_DIRS}")
+message("-- libsndfile: ${SNDFILE_LIBRARY}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
 
@@ -67,6 +66,12 @@ set (GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Examples -----------------------------------------------
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # remove old dummy "autocomplete" files
+  execute_process(COMMAND "rm" "-f ${CMAKE_SOURCE_DIR}/examples_*")
+  message("removing ${CMAKE_SOURCE_DIR}/examples_*")
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if(NOT NO_EXAMPLES)
   set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
   foreach(dir ${EXAMPLE_DIRS})
@@ -75,26 +80,40 @@ if(NOT NO_EXAMPLES)
       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
       add_executable(${dir}_${EXAMPLE_NAME} ${example})
       target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
-      add_custom_target("examples/${dir}/${EXAMPLE_NAME}.cpp" DEPENDS ${dir}_${EXAMPLE_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/bin/${dir}_${EXAMPLE_NAME}")
+      if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	# make dummy "autocomplete" files for OS X
+	execute_process(COMMAND "touch" "${CMAKE_SOURCE_DIR}/examples_${GAMMA_PROJECT_NAME}")
+      endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      add_custom_target("examples_${dir}_${EXAMPLE_NAME}" 
+	DEPENDS ${dir}_${EXAMPLE_NAME} 
+	COMMAND "${CMAKE_SOURCE_DIR}/build/bin/${dir}_${EXAMPLE_NAME}"
+	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin/"
+	COMMENT "Running: examples/${dir}/${GAMMA_PROJECT_NAME}")
     endforeach(example)
   endforeach(dir) 
 endif(NOT NO_EXAMPLES)
 
+
 # Projects -----------------------------------------------
 if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
-  # macro to get subdirectories
+# macro to get subdirectories
   MACRO(SUBDIRLIST result curdir)
     FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
     SET(dirlist "")
     FOREACH(child ${children})
       IF(IS_DIRECTORY ${curdir}/${child})
-        SET(dirlist ${dirlist} ${child})
+	SET(dirlist ${dirlist} ${child})
       ENDIF()
     ENDFOREACH()
     SET(${result} ${dirlist})
   ENDMACRO()
 
   subdirlist(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/projects)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    # remove old dummy "autocomplete" files
+    execute_process(COMMAND "rm" "-f ${CMAKE_SOURCE_DIR}/projects_*")
+    message("removing ${CMAKE_SOURCE_DIR}/projects_*")
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   #include root projects directory
   list(APPEND PROJECT_DIRS ".")
   foreach(dir ${PROJECT_DIRS})
@@ -103,7 +122,6 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       file(READ ${CMAKE_CURRENT_SOURCE_DIR}/projects/${dir}/flags.txt EXTRA_COMPILER_FLAGS)
       message("WARNING: Using additional flags from /projects/${dir}/flags.txt: " ${EXTRA_COMPILER_FLAGS})
     endif()
-
     # Get a list of all files, later remove all .cpp and .h and you're left with the resources to copy
     file(GLOB PROJECT_RES_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} projects/${dir}/*)
 
@@ -111,10 +129,18 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       get_filename_component(GAMMA_PROJECT_NAME ${project_src} NAME_WE) # Get name w/o extension
       set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/projects/${dir})
       add_executable(${GAMMA_PROJECT_NAME} ${project_src})
-      message("Building project: projects_${GAMMA_PROJECT_NAME}")
+      message("Building project: ${GAMMA_PROJECT_NAME}")
       target_link_libraries(${GAMMA_PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
       list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
-      add_custom_target("${project_src}" DEPENDS ${PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${GAMMA_PROJECT_NAME}")
+      if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	# make dummy "autocomplete" files for OS X
+	execute_process(COMMAND "touch" "${CMAKE_SOURCE_DIR}/projects_${GAMMA_PROJECT_NAME}")
+      endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      add_custom_target("projects_${GAMMA_PROJECT_NAME}" 
+	DEPENDS ${GAMMA_PROJECT_NAME} 
+	COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${GAMMA_PROJECT_NAME}"
+	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build/projects/${dir}/"
+	COMMENT "Running: projects/${dir}/${GAMMA_PROJECT_NAME}")
     endforeach(project_src)
 
     foreach(FILENAME ${PROJECT_RES_FILES})
@@ -122,11 +148,10 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       set(DST "${CMAKE_SOURCE_DIR}/build/${FILENAME}")
       if(NOT (IS_DIRECTORY ${SRC}))
 	configure_file(${SRC} ${DST} COPY_ONLY)
-	message("Copying: " ${SRC})
+	message("Copied: " ${SRC})
       endif(NOT (IS_DIRECTORY ${SRC}))
     endforeach(FILENAME)
   endforeach(dir)
-
 endif(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
 
 # Unit tests
