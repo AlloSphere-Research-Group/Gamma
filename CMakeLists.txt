@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.2)
+set(CMAKE_BACKWARDS_COMPATIBILITY "2.2") # to allow slash character in targets
 project(Gamma)
 
 message("Building Gamma.")
@@ -74,7 +75,7 @@ if(NOT NO_EXAMPLES)
       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
       add_executable(${dir}_${EXAMPLE_NAME} ${example})
       target_link_libraries(${dir}_${EXAMPLE_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
-      add_custom_target("gamma_${EXAMPLE_NAME}" DEPENDS ${PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${PROJECT_NAME}")
+      add_custom_target("examples/${dir}/${EXAMPLE_NAME}.cpp" DEPENDS ${dir}_${EXAMPLE_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/bin/${dir}_${EXAMPLE_NAME}")
     endforeach(example)
   endforeach(dir) 
 endif(NOT NO_EXAMPLES)
@@ -113,7 +114,7 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       message("Building project: projects_${GAMMA_PROJECT_NAME}")
       target_link_libraries(${GAMMA_PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
       list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
-      add_custom_target("project_${GAMMA_PROJECT_NAME}" DEPENDS ${GAMMA_PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${GAMMA_PROJECT_NAME}")
+      add_custom_target("${project_src}" DEPENDS ${PROJECT_NAME} COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${GAMMA_PROJECT_NAME}")
     endforeach(project_src)
 
     foreach(FILENAME ${PROJECT_RES_FILES})
