@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(Gamma)
+project(Gamma C CXX)
 
 message("Building Gamma.")
 set(CMAKE_BUILD_TYPE Release)
@@ -31,9 +31,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 # Dependencies
 
 find_package(Portaudio REQUIRED)
-message("-- Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
 find_package(LibSndFile REQUIRED)
+find_package(Threads REQUIRED)
+message("-- Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
 message("-- libsndfile: ${SNDFILE_LIBRARY}")
+message("-- threading: ${CMAKE_THREAD_LIBS_INIT}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
 
@@ -46,7 +48,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(PA_FRAMEWORKS ${AUDIOUNIT_FM} ${COREAUDIO_FM} ${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-target_link_libraries(Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
+target_link_libraries(Gamma 
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${PORTAUDIO_LIBRARIES}
+  ${SNDFILE_LIBRARIES}
+  ${PA_FRAMEWORKS}
+  ${CMAKE_THREAD_LIBS_INIT}
+  )
 
 # Install target
 install (TARGETS Gamma DESTINATION lib)
