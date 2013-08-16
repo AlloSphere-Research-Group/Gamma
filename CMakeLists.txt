@@ -117,11 +117,11 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
   ENDMACRO()
 
   subdirlist(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/projects)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  if((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") AND (NOT NO_AUTOCOMPLETE))
     # remove old dummy "autocomplete" files
     execute_process(COMMAND "rm" "-f ${CMAKE_SOURCE_DIR}/projects_*")
     message("removing ${CMAKE_SOURCE_DIR}/projects_*")
-  endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  endif((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") AND (NOT NO_AUTOCOMPLETE))
   #include root projects directory
   list(APPEND PROJECT_DIRS ".")
   foreach(dir ${PROJECT_DIRS})
@@ -140,10 +140,10 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       message("Building project: ${GAMMA_PROJECT_NAME}")
       target_link_libraries(${GAMMA_PROJECT_NAME} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
       list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
-      if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      if((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") AND (NOT NO_AUTOCOMPLETE))
 	# make dummy "autocomplete" files for OS X
 	execute_process(COMMAND "touch" "${CMAKE_SOURCE_DIR}/projects_${GAMMA_PROJECT_NAME}")
-      endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      endif((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") AND (NOT NO_AUTOCOMPLETE))
       add_custom_target("projects_${GAMMA_PROJECT_NAME}" 
 	DEPENDS ${GAMMA_PROJECT_NAME} 
 	COMMAND "${CMAKE_SOURCE_DIR}/build/projects/${dir}/${GAMMA_PROJECT_NAME}"
