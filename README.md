@@ -38,7 +38,7 @@ Gamma is built as a static library and the binaries are located in the build/ di
 Some useful options to pass to cmake include:
 
  * `-DNO_EXAMPLES=1` : To avoid building examples
- * `-DNO_PROJECTS=1` : TO avois building projects
+ * `-DNO_PROJECTS=1` : To avoid building projects
  * `-DNO_AUTOCOMPLETE=1` : To avoid creating empty files for target autocomplete (OS X only)
  * `-DCMAKE_INSTALL_PREFIX:PATH=/usr` : To set install prefix
 
