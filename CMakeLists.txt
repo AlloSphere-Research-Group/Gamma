@@ -83,7 +83,7 @@ if(NOT NO_EXAMPLES)
     foreach(example ${EXAMPLE_FILES})
       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
       if (ALLOSYSTEM_BUILD)
-	set(EXAMPLE_TARGET allocore_examples_${dir}_${EXAMPLE_NAME})
+	set(EXAMPLE_TARGET gamma_examples_${dir}_${EXAMPLE_NAME})
       else(ALLOSYSTEM_BUILD)
 	set(EXAMPLE_TARGET examples_${dir}_${EXAMPLE_NAME})
       endif(ALLOSYSTEM_BUILD)
