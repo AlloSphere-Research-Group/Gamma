@@ -93,7 +93,8 @@ if(NOT NO_EXAMPLES)
 	COMMAND "${EXAMPLE_TARGET}"
 	DEPENDS "${EXAMPLE_TARGET}"
 	WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-	SOURCES ${example})
+	SOURCES ${example}
+	COMMENT "Running: ${EXAMPLE_TARGET}")
     endforeach(example)
   endforeach(dir) 
 endif(NOT NO_EXAMPLES)
@@ -139,7 +140,7 @@ if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
       endif(ALLOSYSTEM_BUILD)
 
       add_executable(${EXAMPLE_TARGET} ${project_src})
-      message("Building project: ${EXAMPLE_TARGET}")
+      message("Included project: ${EXAMPLE_TARGET}")
       target_link_libraries(${EXAMPLE_TARGET} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
       list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
       add_custom_target("${EXAMPLE_TARGET}_run" 
