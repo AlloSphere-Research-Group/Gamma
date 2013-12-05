@@ -1,6 +1,6 @@
+#!/bin/sh
+
 rm -rf build/ CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile build.ninja rules.ninja Gamma.xcodeproj Gamma.build CMakeScripts
-cd projects
-rm -rf build/ CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile build.ninja rules.ninja CMakeScripts
-cd -
-rm -f projects_*
-rm -f examples_*
+rm -rf AlloSystem-build/
+rm -rf doc/html/
+
