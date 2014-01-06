@@ -28,6 +28,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 
 # TODO: allow choosing static or dynamic libraries
 
+if(USE_CPP_11)
+  message("Using c++11..")
+  if(USE_LIB_CPP)
+    message("Using libc++..")
+    set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+  else(USE_LIB_CPP)
+    set(CMAKE_CXX_FLAGS "-std=c++11")
+  endif(USE_LIB_CPP)
+endif(USE_CPP_11)
+
 # Dependencies
 
 find_package(Portaudio REQUIRED)
