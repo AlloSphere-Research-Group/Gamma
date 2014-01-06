@@ -24,6 +24,10 @@ if [ $? != "0" ]
 	    if [ $? != 0 ]; then
 		exit 1
 	    fi
-	    make `echo $1 |cut -d'.' -f1 | sed -e "s|/|_|g"`_run -j4 $* ;;
+	    make ${FILENAME} -j4 $* &> make_output.txt
+	    if [ $? != "0" ]
+	    then
+		cat make_output.txt
+	    fi
     esac
 fi
