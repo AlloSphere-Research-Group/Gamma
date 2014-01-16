@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 FILENAME=`echo $1 |cut -d'.' -f1 | sed -e "s|/|_|g"`
 TARGET=${FILENAME}_run

@@ -4,6 +4,12 @@ project(Gamma)
 message("==== Configuring Gamma.")
 set(CMAKE_BUILD_TYPE Release)
 
+string(REGEX MATCH ".*\\*.*" match "${CMAKE_CURRENT_SOURCE_DIR}")
+
+IF(NOT ${match} STREQUAL "")
+  message(FATAL_ERROR "Error: Please remove '*' from path!" )
+ENDIF()
+
 # Gamma Library
 set(GAMMA_SRC src/arr.cpp
   src/AudioIO.cpp
