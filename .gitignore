@@ -2,6 +2,13 @@ build/
 xcuserdata
 doxygen_objdb_*
 .DS_Store
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+DerivedData/
+Gamma.build/
+Gamma.xcodeproj/
+cmake_install.cmake
 
 *~
 *.link
