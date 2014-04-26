@@ -14,7 +14,8 @@ equally useful for non-real-time tasks.
 
 2. Compilation Instructions
 ===
-The source code can either be built into a library or directly compiled from source into an application. In the following, the base directory is where this README file is located.
+The source code can either be built into a library or directly compiled from source into an application.
+In the following, the base directory is where this README file is located.
 
 
 2.1 Building a Library
@@ -25,11 +26,12 @@ Gamma uses Cmake to build. You should be able to build Gamma by running
 	cmake .
 	make
 
-will build the library and the examples with automatically detected platform settings. You will need to install dependencies detailed in section 2.3 below.
+will build the library and the examples with automatically detected platform settings.
+You will need to install dependencies detailed in section 2.3 below.
 
 On OS X an Xcode project can be produced by running Cmake like this:
 
-	cmake -G Xcode .
+        cmake  .
 
 (You may need to delete old CMakeCache.txt and the CMakeFiles directory manually or using the distclean script, see below.)
 
@@ -37,18 +39,19 @@ Gamma is built as a static library and the binaries are located in the build/ di
 
 Some useful options to pass to cmake include:
 
- * `-DNO_EXAMPLES=1` : To avoid building examples
- * `-DNO_PROJECTS=1` : To avoid building projects
- * `-DNO_AUTOCOMPLETE=1` : To avoid creating empty files for target autocomplete (OS X only)
+ * `-DBUILD_EXAMPLES=1` : To generate projects with the examples as targets
  * `-DCMAKE_INSTALL_PREFIX:PATH=/usr` : To set install prefix
 
-You should run cmake like this:
+To generate an Xcode project where you can try out the Gamma examples,
+you should run cmake like this:
 
-	cmake . -DNO_EXAMPLES=1 -DNO_PROJECTS=1 -DNO_AUTOCOMPLETE=1
+        cmake . -DBUILD_EXAMPLES=1 -G Xcode
 
 2.2 Compiling Direct From Source
 ---
 Individual Gamma files can easily be added and compiled directly from source into an existing project.
+This way there is no need to build Gamma before using, but it may require
+adding to your project a set of files as some Gamma files depend on others.
 
 Make sure to pass in the following flags to the compiler:
 
@@ -59,7 +62,10 @@ Make sure to pass in the following flags to the compiler:
 
 2.3 Dependencies
 ----------------------------------------
-Gamma depends on PortAudio v19 and libsndfile for performing audio and sound file i/o, respectively. They are required only if using certain Gamma classes. PortAudio is required ONLY if you are using AudioIO (AudioIO.h). libsndfile is required ONLY for SoundFile i/o and playback (SoundFile.h, Player.h).
+Gamma depends on PortAudio v19 and libsndfile for performing audio and sound file i/o, respectively.
+They are required only if using certain Gamma classes.
+PortAudio is required ONLY if you are using AudioIO (AudioIO.h).
+Libsndfile is required ONLY for SoundFile i/o and playback (SoundFile.h, Player.h).
 
 You will also need Cmake to build Gamma. 
 
@@ -72,24 +78,18 @@ If you are having build issues (e.g. you want to use a Makefile but have used th
 
 	./distclean
 	
-3. Examples and projects
+3. Easy building and running
 ===
 
-Examples and projects are built by default when running make, and a special target to run them is also created. To run an example, you should use:
+The simplest way to run Gamma applications is using the included run script like this:
 
-	make examples_effects_echo
+        ./run.sh path/to/source.cpp
 
-This will build and run the example code in examples/effects/echo.cpp.
+You can also build all the cpp files in a particular directory into a single application passing a directory name:
 
-Any files and resources placed in the `projects/` folder will generate build targets. This is a quick and easy way to use Gamma without having to worry about the build system and the dependencies. Any files that are not source files will be copied to the build directories, so relative paths can be used in code to reference resource files, e.g. input audio files. This mechanism assumes that projects consist of a single .cpp source file. For larger projects, you should build upon the project contained in the `template/` directory.
+        ./run.sh path/to/dir
 
-For examples, for the file `projects/sonfication/resonance.cpp` a target called `projects_sonification_resonance` will be added, and you can build and run your project with:
-
-	make projects_sonification_resonance
-
-If you have a file called `audio.wav` in the `projects/sonfication/` directory, it will be copied to the
-
-Projects are configured when running Cmake, so you will need to run cmake if you have added new code or resource files. If you have just modified existing files, running make is enough.
+Running this script will build Gamma and the application, and will run it.
 
 4. Using the template
 ===

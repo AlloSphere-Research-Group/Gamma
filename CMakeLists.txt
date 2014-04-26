@@ -64,17 +64,27 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(PA_FRAMEWORKS ${AUDIOUNIT_FM} ${COREAUDIO_FM} ${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-target_link_libraries(Gamma 
-  ${CMAKE_THREAD_LIBS_INIT}
+set(GAMMA_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
   ${PORTAUDIO_LIBRARIES}
   ${SNDFILE_LIBRARIES}
   ${PA_FRAMEWORKS}
-  ${CMAKE_THREAD_LIBS_INIT}
+  ${CMAKE_THREAD_LIBS_INIT})
+
+target_link_libraries(Gamma  ${GAMMA_LINK_LIBRARIES})
+
+set_target_properties(Gamma
+  PROPERTIES
+  GAMMA_LINK_LIBRARIES "${GAMMA_LINK_LIBRARIES}"
+  )
+set_target_properties(Gamma
+  PROPERTIES
+  GAMMA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
 # Install target
-install (TARGETS Gamma DESTINATION lib)
-set (GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
+
+install(TARGETS Gamma DESTINATION lib)
+set(GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
   Gamma/Allocator.h   Gamma/Filter.h       Gamma/SamplePlayer.h
   Gamma/arr.h         Gamma/FormantData.h  Gamma/Scheduler.h
   Gamma/AudioIO.h     Gamma/Gamma.h        Gamma/scl.h
@@ -89,9 +99,15 @@ set (GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
   Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
+# Run from path
+if((BUILD_DIR) OR (BUILD_APP_FILE))
+  include(cmake_modules/CMakeRunTargets.cmake)
+  set(BUILD_EXAMPLES 0)
+endif((BUILD_DIR) OR (BUILD_APP_FILE))
+
 # Examples -----------------------------------------------
 
-if(NOT NO_EXAMPLES)
+if(BUILD_EXAMPLES)
   set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
   foreach(dir ${EXAMPLE_DIRS})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/bin/examples/${dir})
@@ -113,70 +129,8 @@ if(NOT NO_EXAMPLES)
 	COMMENT "Running: ${EXAMPLE_TARGET}")
     endforeach(example)
   endforeach(dir) 
-endif(NOT NO_EXAMPLES)
+endif(BUILD_EXAMPLES)
 
-
-# Projects -----------------------------------------------
-if(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
-# macro to get subdirectories
-  MACRO(SUBDIRLIST result curdir)
-    FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
-    SET(dirlist "")
-    FOREACH(child ${children})
-      IF(IS_DIRECTORY ${curdir}/${child})
-	SET(dirlist ${dirlist} ${child})
-      ENDIF()
-    ENDFOREACH()
-    SET(${result} ${dirlist})
-  ENDMACRO()
-
-  subdirlist(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/projects)
-  #include root projects directory
-  list(APPEND PROJECT_DIRS ".")
-  foreach(dir ${PROJECT_DIRS})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/bin/projects/${dir})
-    file(GLOB PROJECT_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} projects/${dir}/*.cpp)
-    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/projects/${dir}/flags.txt)
-      file(READ ${CMAKE_CURRENT_SOURCE_DIR}/projects/${dir}/flags.txt EXTRA_COMPILER_FLAGS)
-      message("WARNING: Using additional flags from /projects/${dir}/flags.txt: " ${EXTRA_COMPILER_FLAGS})
-    endif()
-    # Get a list of all files, later remove all .cpp and .h and you're left with the resources to copy
-    file(GLOB PROJECT_RES_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} projects/${dir}/*)
-
-    foreach(project_src ${PROJECT_FILES})
-      get_filename_component(GAMMA_PROJECT_NAME ${project_src} NAME_WE) # Get name w/o extension
-      if (ALLOSYSTEM_BUILD)
-	set(EXAMPLE_TARGET Gamma_projects_${dir}_${GAMMA_PROJECT_NAME})
-      else(ALLOSYSTEM_BUILD)
-	if(${dir} STREQUAL ".")
-	  set(EXAMPLE_TARGET projects_${GAMMA_PROJECT_NAME})
-	else()
-	  set(EXAMPLE_TARGET projects_${dir}_${GAMMA_PROJECT_NAME})
-	endif()
-      endif(ALLOSYSTEM_BUILD)
-
-      add_executable(${EXAMPLE_TARGET} ${project_src})
-      message("Included project: ${EXAMPLE_TARGET}")
-      target_link_libraries(${EXAMPLE_TARGET} Gamma ${PORTAUDIO_LIBRARIES} ${SNDFILE_LIBRARIES} ${PA_FRAMEWORKS})
-      list(REMOVE_ITEM PROJECT_RES_FILES ${project_src})
-      add_custom_target("${EXAMPLE_TARGET}_run" 
-	DEPENDS "${EXAMPLE_TARGET}" 
-	COMMAND "${EXAMPLE_TARGET}"
-	WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-	SOURCES ${example}
-	COMMENT "Running: ${EXAMPLE_TARGET}")
-    endforeach(project_src)
-
-    foreach(FILENAME ${PROJECT_RES_FILES})
-      set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}")
-      set(DST "${CMAKE_SOURCE_DIR}/build/${FILENAME}")
-      if(NOT (IS_DIRECTORY ${SRC}))
-	configure_file(${SRC} ${DST} COPY_ONLY)
-	message("Copied: " ${SRC})
-      endif(NOT (IS_DIRECTORY ${SRC}))
-    endforeach(FILENAME)
-  endforeach(dir)
-endif(NOT NO_PROJECTS AND NOT ALLOSYSTEM_BUILD)
 
 # Unit tests
 if(GAMMA_TEST)
