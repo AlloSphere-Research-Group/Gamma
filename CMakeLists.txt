@@ -100,10 +100,12 @@ set(GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Run from path
-if((BUILD_DIR) OR (BUILD_APP_FILE))
-  include(cmake_modules/CMakeRunTargets.cmake)
-  set(BUILD_EXAMPLES 0)
-endif((BUILD_DIR) OR (BUILD_APP_FILE))
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR}) # use only if cmake was run from the Gamma directory
+    if((BUILD_DIR) OR (BUILD_APP_FILE))
+      include(cmake_modules/CMakeRunTargets.cmake)
+      set(BUILD_EXAMPLES 0)
+    endif((BUILD_DIR) OR (BUILD_APP_FILE))
+endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Examples -----------------------------------------------
 
