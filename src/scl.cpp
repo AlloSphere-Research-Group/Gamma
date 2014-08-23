@@ -102,22 +102,58 @@ float clipMag(float value, float max, float min){
 
 double freq(const char * note){
 
-	char c = *note++;
-	if(within(c, 'a', 'g')){
+	char c = tolower(*note++);
+	if(within(c, 'a','g')){
 		c -= 97;
 
-		static char r[7] = {9,11,0,2,4,5,7};
+		// get pitch class
+		static char r[] = {9,11,0,2,4,5,7};
 		char result = r[(unsigned)c];
-		
+
 		c = *note++;
-		     if(c == '+'){ result++; c = *note; }
-		else if(c == '-'){ result--; c = *note; }
+
+		// apply accidental, if any
+		     if(c == '+' || c == '#'){ ++result; c = *note; }
+		else if(c == '-' || c == 'b'){ --result; c = *note; }
 		else if(c == ' '){ c = *note; }
-		
-		return ::pow(2., (double)(result + (c-48)*12) / 12.) * 8.1757989157741;		
+
+		// add octave
+		result += (c-48)*12;
+
+		return ::pow(2., double(result-9)/12.) * 27.5;
 	}
 	return 0.;
 }
+
+double nearest(double val, const char * intervals, long div){
+	long vr = castIntRound(val);
+	long numWraps = 0;
+	long vm = wrap(vr, numWraps, div, 0L);
+	long min = 0;
+
+	struct F{
+		static int base36To10(char v){
+			v = tolower(v);
+			if(v>='0' && v<='9') return v - '0';
+			if(v>='a' && v<='z') return v - 'a' + 10;
+			return 0;	// non-alphanumeric
+		}
+	};
+
+	while(*intervals){
+		long dia = F::base36To10(*intervals++);
+		long max = min + dia;
+		if(vm < max){	// are we within current interval?
+			if(vm < (min + dia*0.5))	vm = min;
+			else						vm = max;
+			break;
+		}
+		min = max;
+	}
+
+	return double(vm + numWraps * div);
+}
+
 
 /*
 

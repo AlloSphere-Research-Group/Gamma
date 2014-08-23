@@ -8,15 +8,12 @@
 	Complex numbers and n-vectors.
 */
 
-
-#include "Gamma/pstdint.h"		// for cross-platform uint32_t, uint16_t, etc...
 #include <math.h>
-#include <stdlib.h>
 
 namespace gam{
 
 template<class T> class Complex;
-template<uint32_t N, class T> class Vec;
+template<unsigned N, class T> class Vec;
 
 
 typedef float real;				///< Default real number type
@@ -37,8 +34,8 @@ struct Polar{
 	Polar(const T& m, const T& p): m(m), p(p){}
 	Polar(const Complex<T>& v){ *this = v; }
 
-	T& operator[](uint32_t i){ return elems[i];}
-	const T& operator[](uint32_t i) const { return elems[i]; }
+	T& operator[](unsigned i){ return elems[i];}
+	const T& operator[](unsigned i) const { return elems[i]; }
 
 	Polar& operator = (const Complex<T>& v){ m=v.norm(); p=v.arg(); return *this; }
 };
@@ -76,12 +73,24 @@ struct Complex{
 	C& fromPolar(const T& m, const T& p){ return (*this)(Polar<T>(m,p)); }	///< Set magnitude and phase
 
 	template <class U>
-	C& set(const Complex<U>& v){ r=v.r; i=v.i; return *this; }
+	C& operator = (const Polar<U>& v){ r=v.m*::cos(v.p); i=v.m*::sin(v.p); return *this; }
 
-	C& operator()(const T& vr, const T& vi){ r=vr; i=vi; return *this; }
-	C& operator()(const Polar<T>& p){ return *this = p; }
-	T& operator[](uint32_t i){ return elems[i];}
-	const T& operator[](uint32_t i) const { return elems[i]; }
+	template <class U>
+	C& operator = (const Complex<U>& v){ r=v.r; i=v.i; return *this; }
+
+	C& operator = (const T& v){ r=v;   i=T(0); return *this; }
+
+	template <class U>
+	C& set(const Complex<U>& v){ return *this = v; }
+
+	C& set(const T& vr, const T& vi){ r=vr; i=vi; return *this; }
+
+	template <class U>
+	C& set(const Polar<U>& p){ return *this = p; }
+
+
+	T& operator[](unsigned i){ return elems[i];}
+	const T& operator[](unsigned i) const { return elems[i]; }
 
 	bool operator ==(const C& v) const { return (r==v.r) && (i==v.i); }		///< Returns true if all components are equal
 	bool operator ==(const T& v) const { return (r==v  ) && (i==T(0));}		///< Returns true if real and equals value
@@ -89,9 +98,6 @@ struct Complex{
 	bool operator > (const C& v) const { return normSqr() > v.normSqr(); }	///< Returns true if norm is greater than argument's norm
 	bool operator < (const C& c) const { return normSqr() < c.normSqr(); }	///< Returns true if norm is less than argument's norm
 
-	C& operator = (const Polar<T>& v){ r=v.m*::cos(v.p); i=v.m*::sin(v.p); return *this; }
-	C& operator = (const C& v){ r=v.r; i=v.i; return *this; }
-	C& operator = (const T& v){ r=v;   i=T(0); return *this; }
 	C& operator -=(const C& v){ r-=v.r; i-=v.i; return *this; }
 	C& operator -=(const T& v){ r-=v; return *this; }
 	C& operator +=(const C& v){ r+=v.r; i+=v.i; return *this; }
@@ -141,6 +147,11 @@ struct Complex{
 	T mag() const { return norm(); }						///< Returns norm (radius), |z|
 	T magSqr() const { return normSqr(); }					///< Returns magnitude squared, |z|^2
 	T phase() const { return arg(); }						///< Returns argument (angle)
+
+
+	// deprecated
+	C& operator()(const T& vr, const T& vi){ return set(vr,vi); }
+	C& operator()(const Polar<T>& p){ return set(p); }
 };
 
 #define TEM template <class T>
@@ -155,7 +166,7 @@ TEM Complex<T> operator / (T r, const Complex<T>& c){ return  c.conj()*(r/c.norm
 #undef TEM
 
 
-template <uint32_t N, class T> struct NamedElems{ union{ T x; T mElems[N]; }; };
+template <unsigned N, class T> struct NamedElems{ union{ T x; T mElems[N]; }; };
 template<class T> struct NamedElems<0,T>{ static T x; };
 template<class T> struct NamedElems<1,T>{ T x; };
 template<class T> struct NamedElems<2,T>{ T x,y; };
@@ -167,7 +178,7 @@ template<class T> struct NamedElems<4,T>{ T x,y,z,w; };
 
 /// This is fixed in size to enable better loop unrolling optimizations and to 
 /// avoid an extra 'size' data member for small sizes.
-template <uint32_t N, class T>
+template <unsigned N, class T>
 struct Vec : public NamedElems<N,T> {
 
     using NamedElems<N,T>::x;
@@ -181,21 +192,21 @@ struct Vec : public NamedElems<N,T> {
 	template <class U>
 	Vec(const U * src){ set(src); }
 
-	template <uint32_t N2, class T2>
+	template <unsigned N2, class T2>
 	Vec(const Vec<N2, T2>& v){ set(v); }
 
 
     /// Returns size of vector
-    static uint32_t size(){ return N; }
+    static unsigned size(){ return N; }
 
     T * elems(){ return &x; }
     const T * elems() const { return &x; }
 
     /// Set element at index (no bounds checking)
-    T& operator[](uint32_t i){ return elems()[i];}
+    T& operator[](unsigned i){ return elems()[i];}
 
     /// Get element at index (no bounds checking)
-    const T& operator[](uint32_t i) const { return elems()[i]; }
+    const T& operator[](unsigned i) const { return elems()[i]; }
 
 	/// Get a vector comprised of indexed elements
 	Vec<2,T> get(int i0, int i1) const {
@@ -210,7 +221,7 @@ struct Vec : public NamedElems<N,T> {
 		return Vec<4,T>((*this)[i0], (*this)[i1], (*this)[i2], (*this)[i3]); }
 
 
-	#define IT(n) for(uint32_t i=0; i<n; ++i)
+	#define IT(n) for(unsigned i=0; i<n; ++i)
 
 	bool operator !=(const Vec& v){ IT(N){ if((*this)[i] == v[i]) return false; } return true; }
 	bool operator !=(const T& v){ IT(N){ if((*this)[i] == v   ) return false; } return true; }
@@ -294,7 +305,7 @@ struct Vec : public NamedElems<N,T> {
 	/// Set to identity, i.e., {1, 0, ..., 0}
 	Vec& setIdentity(){
 		(*this)[0] = T(1);
-		for(uint32_t i=1; i<N; ++i) (*this)[i] = T(0);
+		for(unsigned i=1; i<N; ++i) (*this)[i] = T(0);
 		return *this;
 	}
 
@@ -303,24 +314,24 @@ struct Vec : public NamedElems<N,T> {
 
 namespace scl{
 
-template<uint32_t N, class T>
+template<unsigned N, class T>
 inline Vec<N,T> abs(Vec<N,T> a){
 	Vec<N,T> r;
-	for(uint32_t i=0; i<N; ++i) r[i] = abs(a[i]);
+	for(unsigned i=0; i<N; ++i) r[i] = abs(a[i]);
 	return r;
 }
 
-template<uint32_t N, class T, class U>
+template<unsigned N, class T, class U>
 inline Vec<N,T> max(Vec<N,T> a, Vec<N,U> b){
 	Vec<N,T> r;
-	for(uint32_t i=0; i<N; ++i) r[i] = max(a[i], b[i]);
+	for(unsigned i=0; i<N; ++i) r[i] = max(a[i], b[i]);
 	return r;
 }
 
-template<uint32_t N, class T, class U>
+template<unsigned N, class T, class U>
 inline Vec<N,T> min(Vec<N,T> a, Vec<N,U> b){
 	Vec<N,T> r;
-	for(uint32_t i=0; i<N; ++i) r[i] = min(a[i], b[i]);
+	for(unsigned i=0; i<N; ++i) r[i] = min(a[i], b[i]);
 	return r;
 }
 

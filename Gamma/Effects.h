@@ -13,44 +13,23 @@
 namespace gam{
 
 ///\defgroup Effects
-///\defgroup Analysis
-
-
-/// Envelope Follower
-
-/// This object produces an estimate of the amplitude envelope of a signal
-/// by feeding a full-wave rectification of the signal through a low-pass filter.
-///\ingroup Filters, Envelopes, Analysis
-template <class Tv=real, class Tp=real, class Ts=Synced>
-class EnvFollow{
-public:
-
-	/// \param[in] freq		Cutoff frequency of smoothing filter
-	EnvFollow(Tp freq=10)
-	:	lpf(freq){}
-
-
-	/// Filter next sample
-	Tv operator()(Tv i0){ return lpf(scl::abs(i0)); }
-
-	/// Returns current amplitude estimate
-	Tv value() const { return lpf.last(); }
-	
-	bool done(Tv eps=0.001) const { return value() < eps; }
-
-	OnePole<Tv,Tp,Ts> lpf;	///< Low-pass filter
-};
 
 
 /// Amplitude modulator
 
-/// Amplitude modulation multiplies two signals together, the product of which
-/// contains the sum and difference frequencies of the inputs.
-/// Unlike ring modulation, amplitude modulation does not suppress the carrier
-/// signal.
+/// Amplitude modulation is based on the operation (M x d + 1) x C where
+/// M is the modulator, C is the carrier, and d is the modulation depth. The
+/// resulting signal contains the carrier signal plus the sums and differences
+/// of all frequencies of the carrier and modulator.
+/// Ring modulation is given by the operation M x C and thus, unlike amplitude
+/// modulation, does not pass the carrier signal.
 template <class Tp=real>
 class AM{
 public:
+
+	/// \param[in] modDepth		modulation depth
+	AM(Tp modDepth = Tp(1))
+	:	mDepth(modDepth){}
 
 	/// Set depth of amplitude modulation
 	void depth(Tp v){ mDepth=v; }
@@ -119,9 +98,9 @@ class Chirp{
 public:
 	/// \param[in] freq1	start frequency
 	/// \param[in] freq2	end frequency
-	/// \param[in] decay60	units to decay by 60 dB
-	Chirp(T freq1=220, T freq2=0, T decay=0.2):
-		osc(freq1), env(decay), freq1(freq1), freq2(freq2)
+	/// \param[in] decay60	length after which envelope decays by 60 dB
+	Chirp(T freq1=220, T freq2=0, T decay60=0.2):
+		osc(freq1), env(decay60), freq1(freq1), freq2(freq2)
 	{}
 	
 	/// Generate next sample
@@ -223,9 +202,11 @@ public:
 		comb1(delay + depth, delay, ffd, fbk),
 		comb2(delay + depth, delay, ffd, fbk),
 		mod(double(freq), double(depth)),
-		delay(delay)
+		mDelay(delay)
 	{}
 
+	Chorus& maxDelay(float v){ comb1.maxDelay(v); comb2.maxDelay(v); return *this; }
+	Chorus& delay(float v){ mDelay=v; return *this; }
 	Chorus& fbk(float v){ comb1.fbk(v); comb2.fbk(v); return *this; }
 	Chorus& ffd(float v){ comb1.ffd(v); comb2.ffd(v); return *this; }
 	Chorus& freq(float v){ mod.freq(v); return *this; }
@@ -233,7 +214,8 @@ public:
 
 	/// Filter sample (mono-mono)
 	T operator()(const T& v){
-		modulate(); return (comb1(v) + comb2(v)) * 0.5f;
+		modulate();
+		return (comb1(v) + comb2(v)) * 0.5f;
 	}
 	
 	/// Filter sample (mono-stereo)
@@ -250,17 +232,22 @@ public:
 	
 	/// Filter samples (stereo-stereo)
 	void operator()(const T& i1, const T& i2, T& o1, T& o2){
-		modulate(); o1=comb1(i1); o2=comb2(i2);
+		modulate();
+		o1=comb1(i1); o2=comb2(i2);
 	}
 	
 	/// Perform delay modulation step (must manually step comb filters after use!)
 	void modulate(){
-		comb1.delay(delay + mod.val.r); comb2.delay(delay + mod.val.i); mod();
+		comb1.delay(mDelay + mod.val.r);
+		comb2.delay(mDelay + mod.val.i);
+		mod();
 	}
 
 	Comb<T, ipl::Cubic> comb1, comb2;		///< Comb filters
 	CSine<double> mod;						///< Modulator
-	float delay;							///< Delay interval
+
+private:
+	float mDelay; // Delay interval
 };
 
 
@@ -327,52 +314,69 @@ template <class T=gam::real>
 class Pan{
 public:
 
-	/// \param[in] pos	Signed unit position in [-1, 1]
+	/// \param[in] pos	Position, in [-1, 1]
 	Pan(T pos=0){ this->pos(pos); }
 
-	/// Filter sample (mono-to-stereo)
+	/// Filter sample (mono to stereo)
 	Vec<2,T> operator()(T in){
 		return Vec<2,T>(in*w1, in*w2);
 	}	
 
-	/// Filter sample (mono-to-stereo)
+	/// Filter sample (mono to stereo)
 	template <class V>
 	void operator()(T in, V& out1, V& out2){
 		out1 = in*w1; out2 = in*w2;
 	}
 
-	/// Filter sample (stereo-to-stereo)
+	/// Filter sample (stereo to stereo)
 	template <class V>
 	void operator()(T in1, T in2, V& out1, V& out2){
 		out1 = in1*w1 + in2*w2;
 		out2 = in1*w2 + in2*w1;
 	}
 
-	/// Set position
-//	void pos(T v){
-//		v = scl::clip(v, (T)1, (T)-1);
-//		v = (v+T(1))*M_PI_4;	// put in [0, pi/2]
-//		w1 = cos(v);
-//		w2 = sin(v); 
-//	}
+	/// Set position (constant power law)
 
-	/// Set position using a quadratic approximation.
+	/// This is a constant power pan where the sum of the squares of the two
+	/// channel gains is always 1. A quadratic approximation is used to avoid
+	/// expensive trig function calls. The approximation is good enough for most
+	/// purposes and gives the exact result at positions of -1, 0, 1.
+	///
+	/// \param[in] v	Position, in [-1, 1]
 	void pos(T v){
-		// gives correct result at -1, 0, and 1
 		static const T c0 = 1./sqrt(2);
 		static const T c1 = 0.5 - c0;
 		static const T c2 =-0.5/c1;
 		v = scl::clip(v, T(1), T(-1));
-		//w1 = (T)-0.25 * v * (v + (T)2) + (T)0.75;
 		w1 = c1 * v * (v + c2) + c0;
 		w2 = w1 + v;
+
+		/* // exact formula, for reference
+		v = scl::clip(v, (T)1, (T)-1);
+		v = (v+T(1))*M_PI_4;	// put in [0, pi/2]
+		w1 = cos(v);
+		w2 = sin(v);*/
 	}
 
-	/// Set position using a linear approximation.
+	/// Set position and overall gain
+
+	/// This is identical to pos(), but includes an overall gain.
+	///
+	/// \param[in] v		Position, in [-1, 1]
+	/// \param[in] gain		Overall gain to apply to both channels
+	void pos(T v, T gain){
+		pos(v); w1*=gain; w2*=gain;
+	}
+
+	/// Set position (constant gain law)
+
+	/// This uses a constant gain law where the sum of the channel gains is
+	/// always 1.
+	/// \param[in] v	Position, in [-1, 1]
 	void posL(T v){
 		v = scl::clip(v, T(1), T(-1));
-		w1 = -v * T(0.5) + T(0.5);
-		w2 = w1 + v; 
+		w1 = T(0.5) - v * T(0.5);
+		w2 = w1 + v;
 	}
 
 protected:
@@ -409,7 +413,7 @@ public:
 /// This effect is also known as a bitcrusher.
 ///\ingroup Effects
 template <class T=gam::real>
-class Quantizer : public Synced{
+class Quantizer : public DomainObserver{
 public:
 	/// \param[in] freq		Frequency of sequence quantization
 	/// \param[in] step		Step size of amplitude quantization
@@ -421,7 +425,7 @@ public:
 
 	T operator()(T input);		///< Return next filtered sample
 	
-	virtual void onResync(double r);
+	virtual void onDomainChange(double r);
 
 private:
 	T mHeld;
@@ -464,64 +468,9 @@ inline T Quantizer<T>::operator()(T vi){
 }
 
 template<class T>
-void Quantizer<T>::onResync(double r){
+void Quantizer<T>::onDomainChange(double r){
 	period(mPeriod);
 }
-
-
-
-/// Compares signal magnitude to a threshold
-
-/// This filter compares the input magnitude to a threshold and returns 1 if 
-/// it's greater than the threshold and 0 otherwise.  The output is sent through
-/// a one-pole low-pass filter.
-///\ingroup Analysis
-template <class T=gam::real>
-class Threshold{
-public:
-	/// \param[in] thresh	Comparing threshold
-	/// \param[in] freq		Cutoff frequency of output smoother
-	Threshold(T thresh, T freq=10):lpf(freq), thresh(thresh){}
-	
-	/// Returns 0 if less than threshold, 1 otherwise
-	T operator()(T i0){ return lpf(scl::abs(i0) > thresh ? T(1) : T(0)); }
-	
-	/// Returns 1 if less than threshold, 0 otherwise
-	T inv(T i0){ return lpf(scl::abs(i0) > thresh ? T(0) : T(1)); }
-	
-	OnePole<T> lpf;	///< Output smoother
-	T thresh;		///< Threshold value
-};
-
-
-
-/// Zero-crossing detector
-
-/// This object determines when a zero crossing occurs. It can distinguish 
-/// between both positive (rising) and negative (falling) zero crossings.
-///\ingroup Analysis
-template<class Tv=gam::real>
-class ZeroCross{
-public:
-
-	ZeroCross(Tv prev = Tv(0)): mPrev(prev){}
-
-	/// Detect zero crossing
-
-	/// \returns 
-	///		 0 if no zero crossing,
-	///		-1 if a negative (falling) zero crossing, and
-	///		 1 if a positive (rising) zero crossing.
-	int operator()(Tv input){
-		int pzc = int((input > Tv(0)) && (mPrev <= Tv(0)));
-		int nzc =-int((input < Tv(0)) && (mPrev >= Tv(0)));
-		mPrev = input;
-		return pzc + nzc;
-	}
-
-private:
-	Tv mPrev;
-};
 
 } // gam::
 #endif

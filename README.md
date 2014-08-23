@@ -3,7 +3,7 @@
 
 
 1. About
-===
+========================================
 Gamma is a cross-platform, C++ library for doing generic synthesis and 
 filtering of signals. It contains helpful mathematical functions, 
 types, such as vectors and complex numbers, an assortment of sequence 
@@ -13,13 +13,13 @@ equally useful for non-real-time tasks.
 
 
 2. Compilation Instructions
-===
+========================================
 The source code can either be built into a library or directly compiled from source into an application.
 In the following, the base directory is where this README file is located.
 
 
 2.1 Building a Library
----
+----------------------------------------
 
 Gamma uses Cmake to build. You should be able to build Gamma by running
 

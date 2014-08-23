@@ -5,9 +5,9 @@
 	See COPYRIGHT file for authors and license information
 */
 
-#include "Gamma/scl.h"
-#include "Gamma/Constants.h"
-#include "Gamma/Types.h"
+#include "Gamma/scl.h"			// abs, wrap
+#include "Gamma/Constants.h"	// M_2PI, M_1_2PI
+#include "Gamma/Types.h"		// Complex
 
 namespace gam{
 
@@ -35,8 +35,8 @@ struct Val{
 	Val(const T& v): val(v){}								///< Constructor
 	Val& operator = (const T& v){ val=v; return *this; }	///< Set value
 	T operator()() const { return val; }					///< Generate next value
-	T& operator[](uint32_t i)      { return val; }			///< Array set; sets current value 
-	T  operator[](uint32_t i) const{ return (*this)(); }	///< Array get; generates next element
+	T& operator[](unsigned i)      { return val; }			///< Array set; sets current value 
+	T  operator[](unsigned i) const{ return (*this)(); }	///< Array get; generates next element
 
 	template<class U> bool operator> (const U& v) const { return val> v; }
 	template<class U> bool operator>=(const U& v) const { return val>=v; }
@@ -52,7 +52,7 @@ struct Val{
 // This is needed since templates are not always smart about inheriting super members.
 #define INHERIT\
 	using Val<T>::val; using Val<T>::operator=;\
-	T   operator[](uint32_t i) const { return (*this)(); }
+	T   operator[](unsigned i) const { return (*this)(); }
 
 template<class T=gam::real>
 struct Impulse : public Val<T>{ INHERIT;
@@ -151,7 +151,7 @@ struct RSin : public Val<T>{ INHERIT;
 
 	/// Set parameters from unit freq, phase, and amplitude.
 	RSin& set(const T& frq, const T& phs, const T& amp=T(1)){
-//		printf("%g %g %g\n", frq, phs, amp);
+		//printf("%g %g %g\n", frq, phs, amp);
 		mFreq = frq;
 		mAmp = amp;
 		mPhase = phs;
@@ -160,49 +160,44 @@ struct RSin : public Val<T>{ INHERIT;
 		mul  = 2 * cos(f);
 		val2 = sin(p - f * T(2))*amp;
 		val  = sin(p - f       )*amp;
-//		printf("%g %g %g\n", freq(), phase(), this->amp());
+		//printf("%g %g %g\n", freq(), phase(), this->amp());
 		return *this;
 	}
 
-// Note: these methods compute parameters directly from coefficients, but is buggy...
-//	/// Get amplitude
-//	T amp() const {	T a,p; ampPhase(a,p); return a; }
-//	
-//	/// Get amplitude and unit phase
-//	void ampPhase(T& a, T& p) const {
-//		p = phase();
-//
-//		const T eps = 1e-8;
-//		if(p > eps && p < (1-eps) && scl::abs(p-0.5) > eps)
-//			a = val /sin(p * M_2PI);
-//		else
-//			a = val2/sin((p - freq())*M_2PI);
-//		return;
-//	}
-//
-//	/// Get unit frequency
-//	T freq() const { return acos(mul*0.5) * M_1_2PI; }
-//
-//	/// Get unit phase
-//	T phase() const {
-//		if(val == val2) return 0;
-//		T f = freq()*M_2PI;
-//		T y = val * sin(f);
-//		T x = val * cos(f) - val2;
-//		T r = atan2(y, x) * M_1_2PI;
-//		if(r < 0) r += 1;
-//		return r;
-//	}
-//
-//	/// Set amplitude
-//	RSin& amp(const T& v){ return set(freq(), phase(), v); }
-//	
-//	/// Set unit frequency
-//	RSin& freq(const T& v){	T a,p; ampPhase(a,p); return set(v,a,p); }
-//
-//	/// Set unit phase
-//	RSin& phase(const T& v){ return set(freq(), v, amp()); }
+/*	Note: these methods compute parameters directly from coefs, but are buggy...
+	
+	/// Get amplitude and unit phase
+	void ampPhase(T& a, T& p) const {
+		p = phase();
 
+		const T eps = 1e-8;
+		if(p > eps && p < (1-eps) && scl::abs(p-0.5) > eps)
+			a = val /sin(p * M_2PI);
+		else
+			a = val2/sin((p - freq())*M_2PI);
+		return;
+	}
+
+	/// Get unit frequency
+	T freq() const { return acos(mul*0.5) * M_1_2PI; }
+
+	/// Get amplitude
+	T amp() const {	T a,p; ampPhase(a,p); return a; }
+
+	/// Get unit phase
+	T phase() const {
+		if(val == val2) return 0;
+		T f = freq()*M_2PI;
+		T y = val * sin(f);
+		T x = val * cos(f) - val2;
+		T r = atan2(y, x) * M_1_2PI;
+		if(r < 0) r += 1;
+		return r;
+	}
+	
+	/// Set unit frequency
+	RSin& freq(const T& v){	T a,p; ampPhase(a,p); return set(v,a,p); }
+*/
 	mutable T val2;
 	T mul;			///< Multiplication factor
 
@@ -512,7 +507,7 @@ typedef CReson<double>	CResond;
 
 
 struct OnOff{
-	OnOff(uint32_t max, uint32_t ons) : max(max), ons(ons), cnt(0){}
+	OnOff(unsigned max, unsigned ons) : max(max), ons(ons), cnt(0){}
 
 	bool operator()(){
 		cnt++;
@@ -521,11 +516,11 @@ struct OnOff{
 		return ons >= max;
 	}
 
-	void set(uint32_t max, uint32_t ons, uint32_t cnt){
+	void set(unsigned max, unsigned ons, unsigned cnt){
 		this->max = max; this->ons = ons; this->cnt = cnt;
 	}
 
-	uint32_t max, ons, cnt;
+	unsigned max, ons, cnt;
 };
 
 
@@ -540,7 +535,7 @@ private:
 
 
 /// Fixed-sized array with a sequence generator
-template <uint32_t N, class T=gam::real, class G=gen::RAdd1<uint32_t> >
+template <unsigned N, class T=gam::real, class G=gen::RAdd1<unsigned> >
 class Seq: public Vec<N,T>{
 public:
 
@@ -548,7 +543,7 @@ public:
 	Seq(const T * vals){ set(vals); }
 
 	/// Generate next array element
-	T operator()(){ return (*this)[((uint32_t)mTap())%N]; }
+	T operator()(){ return (*this)[((unsigned)mTap())%N]; }
 
 	/// Get reference to index generator
 	G& tap(){ return mTap; }
@@ -566,7 +561,7 @@ private:
 /// Argument "val", with a default value of zero can be set by the user
 /// to adjust the location of the triggering sample within the sequence.
 struct Trigger{
-	Trigger(uint32_t num, uint32_t val=0) : val(val), num(num){}
+	Trigger(unsigned num, unsigned val=0) : val(val), num(num){}
 
 	/// Returns (triggers) true upon reset
 	bool operator()(){
@@ -574,8 +569,8 @@ struct Trigger{
 		return false;
 	}
 
-	uint32_t val;		///< Value
-	uint32_t num;		///< Maximum value
+	unsigned val;		///< Value
+	unsigned num;		///< Maximum value
 };
 
 

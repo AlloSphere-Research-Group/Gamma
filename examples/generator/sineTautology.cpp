@@ -7,8 +7,7 @@
 
 #include "../examples.h"
 
-Osc<>        sineT1(440);			// Table look-up (full-wave)
-TableSine<>  sineT2(440);			// Table look-up (quarter-wave)
+Osc<>        sineT1(440);			// Table look-up
 CSine<>      sineCS(440);			// Complex mul
 LFO<>        sineC1(440, -0.25f);	// Computed 3rd order poly
 Sine<>       sineC2(440);			// Computed taylor
@@ -20,14 +19,13 @@ void audioCB(AudioIOData& io){
 
 	while(io()){
 		float s	= sineT1()
-				+ sineT2.nextL()
 				+ sineCS().i
 				+ sineC1.cos()
 				+ sineC2()
 				+ sineRs()
 		;
 
-		s = s/6 - sin(sineC3.nextPhase());	// pass only the artifacts
+		s = s/5. - sin(sineC3.nextPhase());	// pass only the artifacts
 		
 		io.out(0) = io.out(1) = s * 0.2f;
 	}
@@ -35,11 +33,10 @@ void audioCB(AudioIOData& io){
 }
 
 int main(int argc, char* argv[]){
-	AudioIO io(256, 44100., audioCB, NULL, 2);
-	Sync::master().spu(io.framesPerSecond());
-
 	sineT1.addSine(1);
-	
+
+	AudioIO io(256, 44100., audioCB, NULL, 2);
+	Domain::master().spu(io.framesPerSecond());	
 	io.start();
 	printf("\nPress 'enter' to quit...\n"); getchar();
 	return 0;

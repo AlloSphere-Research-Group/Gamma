@@ -5,14 +5,14 @@
 	See COPYRIGHT file for authors and license information */
 
 #include <math.h>
-#include "Gamma/mem.h"
+#include "Gamma/mem.h"			// *Ring functions
 #include "Gamma/scl.h"
 #include "Gamma/tbl.h"
-#include "Gamma/Sync.h"
+#include "Gamma/Domain.h"
 #include "Gamma/Constants.h"
-#include "Gamma/Containers.h"
+#include "Gamma/Containers.h"	
 #include "Gamma/FFT.h"
-#include "Gamma/Types.h"
+#include "Gamma/Types.h"		// Complex
 
 
 namespace gam{
@@ -31,19 +31,19 @@ enum SpectralType{
 /// Sliding window for analysis
     
 ///\ingroup DFT
-    
+///
 template <class T=gam::real>
 class SlidingWindow{
 public:
-	SlidingWindow(uint32_t winSize, uint32_t hopSize);
+	SlidingWindow(unsigned winSize, unsigned hopSize);
 	~SlidingWindow();
 
-	void resize(uint32_t winSize, uint32_t hopSize);
-	void sizeHop(uint32_t size);
-	void sizeWin(uint32_t size);
+	void resize(unsigned winSize, unsigned hopSize);
+	void sizeHop(unsigned size);
+	void sizeWin(unsigned size);
 	
-	uint32_t sizeHop() const;
-	uint32_t sizeWin() const;
+	unsigned sizeHop() const;
+	unsigned sizeWin() const;
 	
 	/// Returns pointer to internal sample window
 	
@@ -68,12 +68,12 @@ protected:
 
 protected:
 	T * mBuf;
-	uint32_t mSizeWin, mSizeHop;
-	uint32_t mTapW;	// current index to write to
-	uint32_t mHopCnt;	// counts samples for hop
+	unsigned mSizeWin, mSizeHop;
+	unsigned mTapW;	// current index to write to
+	unsigned mHopCnt;	// counts samples for hop
 	
 private:
-	uint32_t hopStart() const;
+	unsigned hopStart() const;
 };
 
 
@@ -81,48 +81,75 @@ private:
 /// Base class for DFTs
     
 ///\ingroup DFT
-    
+///
 template <class T=gam::real>
-class DFTBase : public Synced{
+class DFTBase : public DomainObserver{
 public:
 	DFTBase();
 	virtual ~DFTBase();
 
+
 	/// Get pointer to an auxiliary buffer
-	T * aux(uint32_t num);
+	T * aux(unsigned num);
 	
 	/// Get pointer to bin data
 	Complex<T> * bins() const { return mBins; }
 	
 	/// Get reference to bin value
-	Complex<T>& bin(uint32_t k){ return mBins[k]; }
+	Complex<T>& bin(unsigned k){ return mBins[k]; }
 	
 	/// Get read-only reference to bin value
-	const Complex<T>& bin(uint32_t k) const { return mBins[k]; }
+	const Complex<T>& bin(unsigned k) const { return mBins[k]; }
 	
 	double binFreq() const;		///< Get width of frequency bins
-	uint32_t numBins() const;	///< Get number of frequency bins
-	uint32_t sizeDFT() const;	///< Get size of forward transform
-	Sync& syncFreq();			///< Get frequency domain synchronizer
-	
-	/// Set number of real-valued auxilliary buffers
+	unsigned numBins() const;	///< Get number of frequency bins
+	unsigned sizeDFT() const;	///< Get size of transform, in samples
+	Domain& domainFreq();		///< Get frequency domain
+
+
+	/// Set number of real-valued auxiliary buffers
 
 	/// Each buffer allocated will maintain a size equal to the number of bins.
 	/// Memory is guaranteed to be contiguous. This means if you need a 
-	/// complex-valued buffer, you can simply allocate two auxilliary buffers
+	/// complex-valued buffer, you can simply allocate two auxiliary buffers
 	/// and use the address of the first one as the complex-valued buffer.
-	void numAux(uint32_t num);
+	void numAux(unsigned num);
 
-	virtual void onResync(double r);
+	/// Copy one component of the bins to an auxiliary buffer
+
+	/// This method performs a deinterleaving copy of one component of the bins,
+	/// such as magnitude or phase, into an auxiliary buffer.
+	/// \param[in] binComp		bin component;
+	///								0 for real/mag or
+	///								1 for imag/phase/freq
+	/// \param[in] auxNum		auxiliary buffer number
+	void copyBinsToAux(unsigned binComp, unsigned auxNum);
+
+	/// Copy an auxiliary buffer to one component of the bins
+
+	/// This method performs an interleaving copy of an auxiliary buffer to one 
+	/// component of the bins, such as magnitude or phase.
+	/// \param[in] auxNum		auxiliary buffer number
+	/// \param[in] binComp		bin component;
+	///								0 for real/mag or
+	///								1 for imag/phase/freq
+	void copyAuxToBins(unsigned auxNum, unsigned binComp);
+
+	void zero();				///< Zeroes internal frequency bins
+	void zeroEnds();			///< Zeroes DC and Nyquist bins
+	void zeroAux();				///< Zeroes all auxiliary buffers
+	void zeroAux(unsigned num);	///< Zeroes an auxiliary buffer
+
+	virtual void onDomainChange(double r);
 
 protected:
-	uint32_t mSizeDFT, mNumAux;
+	unsigned mSizeDFT, mNumAux;
 	union{
 		T * mBuf;		// FFT buffer
 		Complex<T> * mBins;
 	};
 	T * mAux;		// aux buffers
-	Sync mSyncFreq;
+	Domain mDomFreq;
 
 	T normForward() const;	// get norm factor for forward transform values
 	T * bufPos(){ return mBuf+1; }
@@ -134,7 +161,7 @@ protected:
 /// Discrete Fourier transform
 
 ///\ingroup DFT
-
+///
 class DFT : public DFTBase<float>{
 public:
 	/// Constructor
@@ -142,11 +169,11 @@ public:
 	/// \param[in]	winSize		Number of samples in window
 	/// \param[in]	padSize		Number of zeros to append to window
 	/// \param[in]	specType	Format of spectrum data
-	/// \param[in]	numAux		Number of auxilliary buffers of size numBins() to create
+	/// \param[in]	numAux		Number of auxiliary buffers of size numBins() to create
 	DFT(
-		uint32_t winSize=1024, uint32_t padSize=0,
+		unsigned winSize=1024, unsigned padSize=0,
 		SpectralType specType=COMPLEX,
-		uint32_t numAux=0
+		unsigned numAux=0
 	);
 
 	virtual ~DFT();
@@ -155,20 +182,26 @@ public:
 	/// Set format of spectrum data
 	DFT& spectrumType(SpectralType v);
 
-	/// Set whether to use more precise, but slower polar conversion (default = true)
+	/// Set whether to use precise (but slower) for converting to polar
 	DFT& precise(bool whether);
 
 	/// Set size parameters of transform
-	void resize(uint32_t windowSize, uint32_t padSize);
+	void resize(unsigned windowSize, unsigned padSize);
 
-	float freqRes() const;				///< Get frequency resolution of analysis
+	/// Get frequency resolution of analysis.
+	
+	/// This returns the sample rate over the window size.
+	/// \see DFTBase::binFreq for getting the frequency spacing between bins
+	/// which is equal to the sample rate over the DFT size.
+	float freqRes() const;
+	
 	float overlap() const;				///< Get transform overlap factor
 	bool overlapping() const;			///< Whether the transform is overlapping
-	uint32_t sizeHop() const;			///< Get size of hop
-	uint32_t sizePad() const;			///< Get size of zero-padding
-	uint32_t sizeWin() const;			///< Get size of window
+	unsigned sizeHop() const;			///< Get size of hop
+	unsigned sizePad() const;			///< Get size of zero-padding
+	unsigned sizeWin() const;			///< Get size of window
 
-	Sync& syncHop();					///< Hop rate synchronizer
+	Domain& domainHop();				///< Hop domain
 
 	/// Reads next sample in for a forward transform
 	
@@ -204,23 +237,21 @@ public:
 
 	void spctToRect();		// convert spectrum to rectangle format
 	void spctToPolar();		// convert spectrum to polar format
-	void zero();			///< Zeroes internal frequency bins
-	void zeroEnds();		///< Zeroes DC and Nyquist bins
 
-	virtual void onResync(double r);
+	virtual void onDomainChange(double r);
 	virtual void print(FILE * fp=stdout, const char * append="\n");
 	
 protected:
-	uint32_t mSizeWin;				// samples in analysis window
-	uint32_t mSizeHop;				// samples between forward transforms (= winSize() for DFT)
+	unsigned mSizeWin;				// samples in analysis window
+	unsigned mSizeHop;				// samples between forward transforms (= winSize() for DFT)
 	SpectralType mSpctFormat;		// format of spectrum
 	RFFT<float> mFFT;
-	Sync mSyncHop;
+	Domain mDomHop;
 	
 	// Buffers
 	float * mPadOA;			// Overlap-add buffer (alloc'ed only if zero-padded)
 	float * mBufInv;		// Pointer to inverse sample buffer
-	uint32_t mTapW, mTapR;	// DFT i/o read/write taps
+	unsigned mTapW, mTapR;	// DFT i/o read/write taps
 	bool mPrecise;
 };
 
@@ -233,9 +264,8 @@ protected:
 /// to obtain better time resolution between successive spectral frames. The 
 /// resolution within each individual spectral frame is still determined by the
 /// window size.
-
+///
 /// \ingroup DFT
-    
 class STFT : public DFT {
 public:
 
@@ -245,10 +275,10 @@ public:
 	/// \param[in]	winType		Type of forward transform window
 	/// \param[in]	specType	Format of spectrum data
 	/// \param[in]	numAux		Number of auxiliary buffers to create
-	STFT(uint32_t winSize=1024, uint32_t hopSize=256, uint32_t padSize=0,
+	STFT(unsigned winSize=1024, unsigned hopSize=256, unsigned padSize=0,
 		WindowType winType = RECTANGLE,
 		SpectralType specType = COMPLEX,
-		uint32_t numAux=0
+		unsigned numAux=0
 	);
 	
 	virtual ~STFT();
@@ -272,7 +302,7 @@ public:
 
 
 	/// Set window and zero-padding size, in samples
-	void resize(uint32_t winSize, uint32_t padSize);
+	void resize(unsigned winSize, unsigned padSize);
 
 	/// Whether to apply a triangular window to inverse transform samples
 	STFT& inverseWindowing(bool v){
@@ -282,16 +312,26 @@ public:
 	STFT& rotateForward(bool v){ mRotateForward=v; return *this; }
 
 	/// Set hop size, in samples
-	STFT& sizeHop(uint32_t size);
+	STFT& sizeHop(unsigned size);
 	
 	/// Set window type
 	STFT& windowType(WindowType type);
 
 
-	float unitsHop();
+	double unitsHop();
 	
-	/// Returns array of phases if the sample data type is MAG_FREQ
+	/// Returns array of current analysis phases (MAG_FREQ format only)
 	float * phases();
+
+	/// Returns array of current accumulator phases (MAG_FREQ format only)
+	double * accumPhases();
+
+	/// Reset phases (MAG_FREQ format only)
+
+	/// This resets the phases of all the accumulators used in the inverse
+	/// transform. It can be used to help eliminate phase smearing artifacts 
+	/// from certain transformations, like pitch shifting.
+	STFT& resetPhases();
 	
 	virtual void print(FILE * fp=stdout, const char * append="\n");	
 
@@ -301,6 +341,7 @@ protected:
 	SlidingWindow<float> mSlide;
 	float * mFwdWin;			// forward transform window
 	float * mPhases;			// copy of current phases (mag-freq mode)
+	double * mAccums;			// phase accumulators (mag-freq mode)
 	WindowType mWinType;		// type of analysis window used
 	float mFwdWinMul, mInvWinMul;
 	bool mWindowInverse;		// whether to window inverse samples
@@ -315,9 +356,8 @@ protected:
 /// This transform computes the DFT with a fixed hop size of 1 sample and
 /// within a specified frequency interval. The computational complexity per
 /// sample is O(M), where M is the size, in samples, of the frequency interval.
-
+///
 /// \ingroup DFT
-    
 template <class T>
 class SlidingDFT : public DFTBase<T> {
 public:
@@ -325,19 +365,19 @@ public:
 	/// \param[in] sizeDFT	transform size, in samples
 	/// \param[in] binLo	lower closed endpoint of frequency interval
 	/// \param[in] binHi	upper open endpoint of frequency interval
-	SlidingDFT(uint32_t sizeDFT, uint32_t binLo, uint32_t binHi);
+	SlidingDFT(unsigned sizeDFT, unsigned binLo, unsigned binHi);
 	
 	/// Input next sample and perform forward transform
 	void forward(T input);
 	
 	/// Set endpoints of frequency interval
-	SlidingDFT& interval(uint32_t binLo, uint32_t binHi);
+	SlidingDFT& interval(unsigned binLo, unsigned binHi);
 
 	/// Resize transform
-	void resize(uint32_t sizeDFT, uint32_t binLo, uint32_t binHi);
+	void resize(unsigned sizeDFT, unsigned binLo, unsigned binHi);
 		
 protected:
-	uint32_t mBinLo, mBinHi;
+	unsigned mBinLo, mBinHi;
 	DelayN<T> mDelay;
 	//T * mBufI;				// alias to imaginaries
 	Complex<T> mF1;
@@ -349,13 +389,11 @@ protected:
 
 
 
+
 // Implementation_______________________________________________________________
-
-//---- SlidingWindow
-
 template<class T>
-SlidingWindow<T>::SlidingWindow(uint32_t winSize, uint32_t hopSize)
-	: mBuf(0), mSizeWin(0), mSizeHop(0), mHopCnt(0)
+SlidingWindow<T>::SlidingWindow(unsigned winSize, unsigned hopSize)
+:	mBuf(0), mSizeWin(0), mSizeHop(0), mTapW(0), mHopCnt(0)
 {
 	resize(winSize, hopSize);
 	mem::deepZero(mBuf, sizeWin());
@@ -363,32 +401,35 @@ SlidingWindow<T>::SlidingWindow(uint32_t winSize, uint32_t hopSize)
 
 template<class T>
 SlidingWindow<T>::~SlidingWindow(){
-	if(mBuf){ free(mBuf); mBuf = 0; }
+	mem::free(mBuf);
 }
 
 template<class T>
-void SlidingWindow<T>::resize(uint32_t winSize, uint32_t hopSize){
+void SlidingWindow<T>::resize(unsigned winSize, unsigned hopSize){
 	sizeWin(winSize);
 	sizeHop(hopSize);
-	//mTapW = hopStart();	// for single-buffer slide mode
-	mTapW = 0;				// for single-buffer rotate mode
 }
 
 template<class T>
-void SlidingWindow<T>::sizeWin(uint32_t size){
-	if(mem::resize(mBuf, sizeWin(), size)) mSizeWin = size;
+void SlidingWindow<T>::sizeWin(unsigned size){
+	if(mem::resize(mBuf, sizeWin(), size)){
+		mSizeWin = size;
+		//mTapW = hopStart();	// for single-buffer slide mode
+		mTapW = 0;				// for single-buffer rotate mode
+		sizeHop(mSizeHop);		// ensures hop size <= win size
+	}
 }
 
 template<class T>
-void SlidingWindow<T>::sizeHop(uint32_t size){
-	mSizeHop = scl::clip(size, sizeWin(), (uint32_t)1);
+void SlidingWindow<T>::sizeHop(unsigned size){
+	mSizeHop = scl::clip<unsigned>(size, sizeWin(), 1);
 }
 
 template<class T>
-inline uint32_t SlidingWindow<T>::sizeHop() const { return mSizeHop; }
+inline unsigned SlidingWindow<T>::sizeHop() const { return mSizeHop; }
     
 template<class T>
-inline uint32_t SlidingWindow<T>::sizeWin() const { return mSizeWin; }
+inline unsigned SlidingWindow<T>::sizeWin() const { return mSizeWin; }
     
 template<class T>
 inline const T * SlidingWindow<T>::window(){ return mBuf; }
@@ -432,19 +473,22 @@ inline bool SlidingWindow<T>::operator()(T * output, T input){
 }
 
 template<class T>
-inline void SlidingWindow<T>::slide(){
+void SlidingWindow<T>::slide(){
 	mem::deepMove(mBuf, mBuf + sizeHop(), hopStart());
 }
 
 template<class T>
-inline uint32_t SlidingWindow<T>::hopStart() const { return sizeWin() - sizeHop(); }
+inline unsigned SlidingWindow<T>::hopStart() const { return sizeWin() - sizeHop(); }
 
 
 
-//---- DFTBase
 
 template<class T>
-DFTBase<T>::DFTBase() : mSizeDFT(0), mNumAux(0), mBuf(0), mAux(0){ initSynced(); }
+DFTBase<T>::DFTBase()
+:	mSizeDFT(0), mNumAux(0), mBuf(0), mAux(0)
+{
+	refreshDomain();
+}
 
 template<class T>
 DFTBase<T>::~DFTBase(){ //printf("~DFTBase\n");
@@ -453,36 +497,67 @@ DFTBase<T>::~DFTBase(){ //printf("~DFTBase\n");
 }
 
 template<class T>
-inline T *		DFTBase<T>::aux(uint32_t num){ return mAux + numBins() * num; }
+inline T * DFTBase<T>::aux(unsigned num){ return mAux + numBins() * num; }
     
 template<class T>
-inline double	DFTBase<T>::binFreq() const { return spu() / (double)sizeDFT(); }
+inline double DFTBase<T>::binFreq() const { return spu() / sizeDFT(); }
     
 template<class T>
-inline uint32_t	DFTBase<T>::numBins() const { return (sizeDFT() + 2)>>1; }
+inline unsigned	DFTBase<T>::numBins() const { return (sizeDFT() + 2)>>1; }
     
 template<class T>
-inline uint32_t	DFTBase<T>::sizeDFT() const { return mSizeDFT; }
+inline unsigned	DFTBase<T>::sizeDFT() const { return mSizeDFT; }
     
 template<class T>
-inline Sync&	DFTBase<T>::syncFreq(){ return mSyncFreq; }
+inline Domain& DFTBase<T>::domainFreq(){ return mDomFreq; }
     
 template<class T>
-inline T		DFTBase<T>::normForward() const { return (T)2 / (T)sizeDFT(); }
+inline T DFTBase<T>::normForward() const { return T(2) / T(sizeDFT()); }
 
 template<class T>
-void DFTBase<T>::numAux(uint32_t num){
-	if(mem::resize(mAux, mNumAux * numBins(), num * numBins())) mNumAux = num;
+void DFTBase<T>::numAux(unsigned num){
+	if(mem::resize(mAux, mNumAux * numBins(), num * numBins())){
+		mNumAux = num;
+		zeroAux();
+	}
 }
 
 template<class T>
-void DFTBase<T>::onResync(double r){
-	mSyncFreq.ups(binFreq());
+void DFTBase<T>::copyBinsToAux(unsigned binComp, unsigned auxNum){
+	T * auxBuf = aux(auxNum);
+	for(unsigned k=0; k<numBins(); ++k)
+		auxBuf[k] = bin(k)[binComp];
+}
+
+template<class T>
+void DFTBase<T>::copyAuxToBins(unsigned auxNum, unsigned binComp){
+	T * auxBuf = aux(auxNum);
+	for(unsigned k=0; k<numBins(); ++k)
+		bin(k)[binComp] = auxBuf[k];
+}
+
+template<class T>
+void DFTBase<T>::zero(){ mem::deepZero(mBuf, sizeDFT() + 2); }
+
+template<class T>
+void DFTBase<T>::zeroEnds(){
+	bins()[0](0,0);
+	bins()[numBins()-1](0,0);
+}
+
+template<class T>
+void DFTBase<T>::zeroAux(){ mem::deepZero(mAux, mNumAux * numBins()); }
+
+template<class T>
+void DFTBase<T>::zeroAux(unsigned num){ mem::deepZero(aux(num), numBins()); }
+
+template<class T>
+void DFTBase<T>::onDomainChange(double r){
+	domainFreq().ups(binFreq());
 }
 
 
 
-//---- DFT
 
 inline DFT& DFT::spectrumType(SpectralType v){ mSpctFormat=v; return *this; }
 inline DFT& DFT::precise(bool w){ mPrecise=w; return *this; }
@@ -490,10 +565,10 @@ inline DFT& DFT::precise(bool w){ mPrecise=w; return *this; }
 inline float DFT::freqRes() const { return spu() / sizeWin(); }
 inline float DFT::overlap() const { return float(sizeWin()) / sizeHop(); }
 inline bool DFT::overlapping() const { return sizeHop() < sizeWin(); }
-inline uint32_t DFT::sizeHop() const { return mSizeHop; }
-inline uint32_t DFT::sizePad() const { return mSizeDFT - mSizeWin; }
-inline uint32_t DFT::sizeWin() const { return mSizeWin; }
-inline Sync& DFT::syncHop(){ return mSyncHop; }
+inline unsigned DFT::sizeHop() const { return mSizeHop; }
+inline unsigned DFT::sizePad() const { return mSizeDFT - mSizeWin; }
+inline unsigned DFT::sizeWin() const { return mSizeWin; }
+inline Domain& DFT::domainHop(){ return mDomHop; }
 
 inline bool DFT::operator()(float input){
 	bufPos()[mTapW] = input;
@@ -515,16 +590,9 @@ inline float DFT::operator()(){
 }
 
 inline bool DFT::inverseOnNext(){ return mTapR == (sizeHop() - 1); }
-inline void DFT::zero(){ mem::deepZero(mBuf, sizeDFT() + 2); }
-inline void DFT::zeroEnds(){ 
-	//bins0()[0]=0; bins0()[numBins()-1]=0; 
-	//bins1()[0]=0; bins1()[numBins()-1]=0;
-	bins()[0](0,0);
-	bins()[numBins()-1](0,0);
-}
 
 
-//---- STFT
+
 
 inline bool STFT::operator()(float input){
 	if(mSlide(bufPos(), input)){
@@ -534,22 +602,22 @@ inline bool STFT::operator()(float input){
 	return false;
 }
 
-inline float STFT::unitsHop(){ return (float)DFT::sizeHop() * ups(); }
+inline double STFT::unitsHop(){ return DFT::sizeHop() * ups(); }
 inline float * STFT::phases(){ return mPhases; }
+inline double * STFT::accumPhases(){ return mAccums; }
 
 
 
-//---- SlidingDFT
 
 template<class T>
-SlidingDFT<T>::SlidingDFT(uint32_t sizeDFT, uint32_t binLo, uint32_t binHi)
+SlidingDFT<T>::SlidingDFT(unsigned sizeDFT, unsigned binLo, unsigned binHi)
 	: DFTBase<T>(), mBinLo(0), mBinHi(0), mDelay(0)
 {
 	resize(sizeDFT, binLo, binHi);
 }
 
 template<class T>
-void SlidingDFT<T>::resize(uint32_t sizeDFT, uint32_t binLo, uint32_t binHi){
+void SlidingDFT<T>::resize(unsigned sizeDFT, unsigned binLo, unsigned binHi){
 	// may be able to keep these smaller?
 	mem::resize(this->mBuf, this->mSizeDFT + 2, sizeDFT + 2);
 	mem::deepZero(this->mBuf, sizeDFT + 2);
@@ -565,7 +633,7 @@ void SlidingDFT<T>::resize(uint32_t sizeDFT, uint32_t binLo, uint32_t binHi){
 }
 
 template<class T>
-SlidingDFT<T>& SlidingDFT<T>::interval(uint32_t binLo, uint32_t binHi){
+SlidingDFT<T>& SlidingDFT<T>::interval(unsigned binLo, unsigned binHi){
 	mBinLo = binLo;
 	mBinHi = binHi;
 	
@@ -588,7 +656,7 @@ inline void SlidingDFT<T>::forward(T input){
 	// multiply freq samples by 1st harmonic (shift time signal)
 	// add time sample to all bins (set time sample at n=0)
 	
-	for(uint32_t k=mBinLo; k<mBinHi; ++k){
+	for(unsigned k=mBinLo; k<mBinHi; ++k){
 		Complex<T>& b = this->bins(k);
 		b = b*c + dif;
 		c *= mF1;
@@ -597,8 +665,6 @@ inline void SlidingDFT<T>::forward(T input){
 
 //template<class T>
 //inline T SlidingDFT<T>::inverse(){}
-
-
 
 /*
 template<class T>
@@ -622,6 +688,4 @@ protected:
 */
 
 } // gam::
-
 #endif
-
