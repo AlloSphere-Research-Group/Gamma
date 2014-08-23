@@ -15,6 +15,7 @@ set(GAMMA_SRC src/arr.cpp
   src/AudioIO.cpp
   src/Conversion.cpp
   src/DFT.cpp
+  src/Domain.cpp
   src/FFT_fftpack.cpp
   src/fftpack++1.cpp
   src/fftpack++2.cpp
@@ -23,8 +24,7 @@ set(GAMMA_SRC src/arr.cpp
   src/scl.cpp
   src/Recorder.cpp
   src/Scheduler.cpp
-  src/SoundFile.cpp
-  src/Sync.cpp)
+  src/SoundFile.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_library(Gamma ${GAMMA_SRC})
@@ -90,7 +90,7 @@ set(GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
   Gamma/AudioIO.h     Gamma/Gamma.h        Gamma/scl.h
   Gamma/Config.h      Gamma/gen.h          Gamma/SoundFile.h
   Gamma/Constants.h   Gamma/ipl.h          Gamma/Strategy.h
-  Gamma/Containers.h  Gamma/mem.h          Gamma/Sync.h
+  Gamma/Containers.h  Gamma/mem.h          Gamma/Domain.h
   Gamma/Conversion.h  Gamma/Node.h         Gamma/tbl.h
   Gamma/Delay.h       Gamma/Noise.h        Gamma/Thread.h
   Gamma/DFT.h         Gamma/Oscillator.h   Gamma/Timer.h
