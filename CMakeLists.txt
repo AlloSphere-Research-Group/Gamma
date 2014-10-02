@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Release)
 string(REGEX MATCH ".*\\*.*" match "${CMAKE_CURRENT_SOURCE_DIR}")
 
 IF(NOT ${match} STREQUAL "")
-  message(FATAL_ERROR "Error: Please remove '*' from path!" )
+  message(FATAL_ERROR "Error: Please remove '*' from path!" ) # This avoids issues with the run script
 ENDIF()
 
 # Gamma Library
@@ -84,19 +84,7 @@ set_target_properties(Gamma
 # Install target
 
 install(TARGETS Gamma DESTINATION lib)
-set(GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
-  Gamma/Allocator.h   Gamma/Filter.h       Gamma/SamplePlayer.h
-  Gamma/arr.h         Gamma/FormantData.h  Gamma/Scheduler.h
-  Gamma/AudioIO.h     Gamma/Gamma.h        Gamma/scl.h
-  Gamma/Config.h      Gamma/gen.h          Gamma/SoundFile.h
-  Gamma/Constants.h   Gamma/ipl.h          Gamma/Strategy.h
-  Gamma/Containers.h  Gamma/mem.h          Gamma/Domain.h
-  Gamma/Conversion.h  Gamma/Node.h         Gamma/tbl.h
-  Gamma/Delay.h       Gamma/Noise.h        Gamma/Thread.h
-  Gamma/DFT.h         Gamma/Oscillator.h   Gamma/Timer.h
-  Gamma/Effects.h     Gamma/Print.h        Gamma/TransferFunc.h
-  Gamma/Envelope.h    Gamma/pstdint.h      Gamma/Types.h
-  Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
+file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Run from path
