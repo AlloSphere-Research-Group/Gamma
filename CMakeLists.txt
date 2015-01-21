@@ -96,7 +96,7 @@ set(GAMMA_INSTALL_HEADERS Gamma/Access.h      Gamma/File.h         Gamma/rnd.h
   Gamma/DFT.h         Gamma/Oscillator.h   Gamma/Timer.h
   Gamma/Effects.h     Gamma/Print.h        Gamma/TransferFunc.h
   Gamma/Envelope.h    Gamma/pstdint.h      Gamma/Types.h
-  Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h)
+  Gamma/FFT.h         Gamma/Recorder.h     Gamma/UnitMaps.h Gamma/Sync.h)
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Run from path
