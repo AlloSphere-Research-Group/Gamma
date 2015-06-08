@@ -20,9 +20,9 @@
 namespace gamf {
 // From Gamma/Oscillator.h
 /// \ingroup SimpleGamma
-class Accum: public gam::Accum<> {
+class Accum: public gam::Accum<float> {
 public:
-    Accum(float frq=0, float phs=0) : gam::Accum<>(frq, phs) {}
+    Accum(float frq=0, float phs=0) : gam::Accum<float>(frq, phs) {}
 };
 
 //typedef gam::Sweep<> Sweep;
@@ -30,16 +30,16 @@ public:
 //typedef gam::CSine<> CSine;
 
 /// \ingroup SimpleGamma
-class Osc: public gam::Osc<> {
+class Osc: public gam::Osc<float> {
 public:
-    Osc(float frq=440, float phs=0, uint32_t size=512) : gam::Osc<>(frq, phs, size) {}
-    Osc(float frq, float phs, ArrayPow2<float>& src) : gam::Osc<>(frq, phs, src) {}
+    Osc(float frq=440, float phs=0, uint32_t size=512) : gam::Osc<float>(frq, phs, size) {}
+    Osc(float frq, float phs, ArrayPow2<float>& src) : gam::Osc<float>(frq, phs, src) {}
 };
 
 /// \ingroup SimpleGamma
 class Sine: public gam::Sine<> {
 public:
-    Sine(gam::real frq = 440.0, gam::real phs = 0.0) : gam::Sine<>(frq, phs) {}
+    Sine(float frq = 440.0, float phs = 0.0) : gam::Sine<float>(frq, phs) {}
 };
 //typedef gam::SineR<> SineR;
 //typedef gam::SineRs<> SineRs;
