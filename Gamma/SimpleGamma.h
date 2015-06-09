@@ -72,9 +72,29 @@ public:
 class LowPass: public gam::Biquad<float, float> {
 public:
     LowPass(float frq = 1000.0, float res = 1.0) :
-        Biquad<float, float>(frq, res, gam::LOW_PASS) {}
+        gam::Biquad<float, float>(frq, res, gam::LOW_PASS) {}
 
 };
+
+// From Gamma/Envelope.h -------------------------------------
+
+class ADSR : public gam::ADSR<float, float> {
+public:
+    ADSR(float att = 0.01, float dec = 0.1, float sus = 0.7, float rel = 1.,
+         float amp = 1.0, float crv = -4.0) :
+        gam::ADSR<float, float>(att, dec, sus, rel, amp, crv) {}
+};
+
+// From Gamma/Noise.h ----------------------------------------
+
+class NoiseWhite: public gam::NoiseWhite<> {
+public:
+    NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
+    NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
+};
+
+
+using gam::setGlobalSampleRate;
 
 /// \ingroup SimpleGamma
 typedef gam::AudioDevice AudioDevice;
