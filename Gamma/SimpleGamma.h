@@ -18,12 +18,15 @@
 
 
 /// \ingroup SimpleGamma
+namespace gam {
 
 /// Sets the global sample rate for all Gamma generators and processors that
 /// are not linked explicitly to a different Domain.
 static void setGlobalSampleRate(double sampleRate)
 {
     gam::Domain::master().spu(sampleRate);
+}
+
 }
 
 namespace gamf {
