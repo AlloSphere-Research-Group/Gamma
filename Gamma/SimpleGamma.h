@@ -16,13 +16,24 @@
 
 /// \defgroup SimpleGamma
 
+
 /// \ingroup SimpleGamma
+
+/// Sets the global sample rate for all Gamma generators and processors that
+/// are not linked explicitly to a different Domain.
+static void setGlobalSampleRate(double sampleRate)
+{
+    gam::Domain::master().spu(sampleRate);
+}
+
 namespace gamf {
-// From Gamma/Oscillator.h
+
+
+// From Gamma/Oscillator.h ----------------------------------------------
 /// \ingroup SimpleGamma
-class Accum: public gam::Accum<float> {
+class Accum: public gam::Accum<> {
 public:
-    Accum(float frq=0, float phs=0) : gam::Accum<float>(frq, phs) {}
+    Accum(float frq=0.0, float phs=0.0) : gam::Accum<>(frq, phs) {}
 };
 
 //typedef gam::Sweep<> Sweep;
@@ -52,6 +63,15 @@ public:
 //typedef gam::Square<> Square;
 //typedef gam::DSF<> DSF;
 //typedef gam::ImpulseFast ImpulseFast;
+
+// From Gamma/Filter.h --------------------------------------
+
+class LowPass: public gam::Biquad<float, float> {
+public:
+    LowPass(float frq = 1000.0, float res = 1.0) :
+        Biquad<float, float>(frq, res, gam::LOW_PASS) {}
+
+};
 
 /// \ingroup SimpleGamma
 typedef gam::AudioDevice AudioDevice;
