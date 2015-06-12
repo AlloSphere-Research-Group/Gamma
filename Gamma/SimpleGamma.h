@@ -16,27 +16,30 @@
 
 /// \defgroup SimpleGamma
 
-
 /// \ingroup SimpleGamma
-namespace gam {
+
+#ifndef SIMPLEGAMMA_FLOATS
+#define NAMESPACE_NAME gamd
+#define REAL double
+#else
+#define NAMESPACE_NAME gamf
+#define REAL float
+#endif
+
+namespace NAMESPACE_NAME {
 
 /// Sets the global sample rate for all Gamma generators and processors that
 /// are not linked explicitly to a different Domain.
 static void setGlobalSampleRate(double sampleRate)
 {
-    gam::Domain::master().spu(sampleRate);
+    gam::sampleRate(sampleRate);
 }
-
-}
-
-namespace gamf {
-
 
 // From Gamma/Oscillator.h ----------------------------------------------
 /// \ingroup SimpleGamma
 class Accum: public gam::Accum<> {
 public:
-    Accum(float frq=0.0, float phs=0.0) : gam::Accum<>(frq, phs) {}
+    Accum(REAL frq=0.0, REAL phs=0.0) : gam::Accum<>(frq, phs) {}
 };
 
 //typedef gam::Sweep<> Sweep;
@@ -44,16 +47,16 @@ public:
 //typedef gam::CSine<> CSine;
 
 /// \ingroup SimpleGamma
-class Osc: public gam::Osc<float> {
+class Osc: public gam::Osc<REAL> {
 public:
-    Osc(float frq=440, float phs=0, uint32_t size=512) : gam::Osc<float>(frq, phs, size) {}
-    Osc(float frq, float phs, ArrayPow2<float>& src) : gam::Osc<float>(frq, phs, src) {}
+    Osc(REAL frq=440, REAL phs=0, uint32_t size=512) : gam::Osc<REAL>(frq, phs, size) {}
+    Osc(REAL frq, REAL phs, ArrayPow2<REAL>& src) : gam::Osc<REAL>(frq, phs, src) {}
 };
 
 /// \ingroup SimpleGamma
-class Sine: public gam::Sine<> {
+class Sine: public gam::Sine<REAL> {
 public:
-    Sine(float frq = 440.0, float phs = 0.0) : gam::Sine<float>(frq, phs) {}
+    Sine(REAL frq = 440.0, REAL phs = 0.0) : gam::Sine<REAL>(frq, phs) {}
 };
 //typedef gam::SineR<> SineR;
 //typedef gam::SineRs<> SineRs;
@@ -68,21 +71,43 @@ public:
 //typedef gam::ImpulseFast ImpulseFast;
 
 // From Gamma/Filter.h --------------------------------------
-
-class LowPass: public gam::Biquad<float, float> {
+// TODO: Is res required in low pass, hi pass and all pass biquads here?
+class LowPass: public gam::Biquad<REAL, REAL> {
 public:
-    LowPass(float frq = 1000.0, float res = 1.0) :
-        gam::Biquad<float, float>(frq, res, gam::LOW_PASS) {}
+    LowPass(REAL frq = 1000.0, REAL res = 1.0) :
+        gam::Biquad<REAL, REAL>(frq, res, gam::LOW_PASS) {}
+
+};
+
+class HiPass: public gam::Biquad<REAL, REAL> {
+public:
+	HiPass(REAL frq = 1000.0, REAL res = 1.0) :
+		gam::Biquad<REAL, REAL>(frq, res, gam::HIGH_PASS) {}
+
+};
+
+class AllPass: public gam::Biquad<REAL, REAL> {
+public:
+	AllPass(REAL frq = 1000.0, REAL res = 1.0) :
+		gam::Biquad<REAL, REAL>(frq, res, gam::ALL_PASS) {}
 
 };
 
 // From Gamma/Envelope.h -------------------------------------
 
-class ADSR : public gam::ADSR<float, float> {
+class Curve : public gam::Curve<REAL, REAL> {
 public:
-    ADSR(float att = 0.01, float dec = 0.1, float sus = 0.7, float rel = 1.,
-         float amp = 1.0, float crv = -4.0) :
-        gam::ADSR<float, float>(att, dec, sus, rel, amp, crv) {}
+	Curve() : gam::Curve<REAL, REAL>() {}
+	Curve(REAL length, REAL curve, REAL start= 1.0, REAL end= 0.0) :
+		gam::Curve<REAL, REAL>(length, curve, start, end)
+	{}
+};
+
+class ADSR : public gam::ADSR<REAL, REAL> {
+public:
+    ADSR(REAL att = 0.01, REAL dec = 0.1, REAL sus = 0.7, REAL rel = 1.,
+         REAL amp = 1.0, REAL crv = -4.0) :
+        gam::ADSR<REAL, REAL>(att, dec, sus, rel, amp, crv) {}
 };
 
 // From Gamma/Noise.h ----------------------------------------
@@ -92,9 +117,6 @@ public:
     NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
     NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
 };
-
-
-using gam::setGlobalSampleRate;
 
 /// \ingroup SimpleGamma
 typedef gam::AudioDevice AudioDevice;
@@ -109,6 +131,11 @@ namespace rnd {
 /// \ingroup SimpleGamma
 using gam::rnd::pick;
 }
+
+namespace scl {
+using gam::scl::clip;
+}
+
 /// \ingroup SimpleGamma
 typedef gam::Domain Domain;
 }

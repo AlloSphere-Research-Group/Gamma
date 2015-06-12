@@ -8,7 +8,7 @@
 #include <stdio.h>				// for printing to stdout
 
 #include "Gamma/SimpleGamma.h"
-using namespace gamf;
+using namespace gamd;
 
 // Noise source
 NoiseWhite src;           
