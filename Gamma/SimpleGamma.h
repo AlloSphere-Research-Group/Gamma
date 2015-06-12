@@ -94,6 +94,22 @@ public:
 
 //typedef gam::ImpulseFast ImpulseFast;
 
+// From Gamma/Delay.h -------------------------------------
+
+class Delay: public gam::Delay<REAL, gam::ipl::Cubic  > {
+public:
+	Delay(REAL delay) :
+		gam::Delay<REAL, gam::ipl::Cubic >(delay) {}
+	Delay(REAL maxDelay, REAL delay) :
+		gam::Delay<REAL, gam::ipl::Cubic >(maxDelay, delay) {}
+};
+
+class Delay1: public gam::Delay1<REAL> {
+public:
+	Delay1(REAL initialValue = 0.0) :
+		gam::Delay1<REAL>(initialValue) {}
+};
+
 // From Gamma/Filter.h --------------------------------------
 // TODO: Is res required in low pass, hi pass and all pass biquads here?
 class LowPass: public gam::Biquad<REAL, REAL> {
@@ -116,6 +132,8 @@ public:
 		gam::Biquad<REAL, REAL>(frq, res, gam::ALL_PASS) {}
 
 };
+
+
 
 // From Gamma/Envelope.h -------------------------------------
 
