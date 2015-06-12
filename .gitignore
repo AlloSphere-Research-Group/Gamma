@@ -9,6 +9,8 @@ DerivedData/
 Gamma.build/
 Gamma.xcodeproj/
 cmake_install.cmake
+doc/html
+doc/latex
 
 *~
 *.link
