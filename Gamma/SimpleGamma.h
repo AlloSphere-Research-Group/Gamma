@@ -58,16 +58,40 @@ class Sine: public gam::Sine<REAL> {
 public:
     Sine(REAL frq = 440.0, REAL phs = 0.0) : gam::Sine<REAL>(frq, phs) {}
 };
+
 //typedef gam::SineR<> SineR;
 //typedef gam::SineRs<> SineRs;
 //typedef gam::SineD<> SineD;
 //typedef gam::SineDs<> SineDs;
-//typedef gam::LFO<> LFO;
 //typedef gam::Buzz<> Buzz;
-//typedef gam::Impulse<> Impulse;
-//typedef gam::Saw<> Saw;
-//typedef gam::Square<> Square;
-//typedef gam::DSF<> DSF;
+
+class LFO: public gam::LFO<REAL> {
+public:
+	LFO(REAL frq = 440.0, REAL phs = 0.0, REAL mod = 0.5)
+		: gam::LFO<REAL>(frq, phs, mod) {}
+};
+
+class Impulse: public gam::Impulse<REAL> {
+public:
+	Impulse(REAL frq = 440.0, REAL phs = 0.0) : gam::Impulse<REAL>(frq, phs) {}
+};
+
+class Saw: public gam::Saw<REAL> {
+public:
+	Saw(REAL frq = 440.0, REAL phs = 0.0) : gam::Saw<REAL>(frq, phs) {}
+};
+
+class Square: public gam::Square<REAL> {
+public:
+	Square(REAL frq = 440.0, REAL phs = 0.0) : gam::Square<REAL>(frq, phs) {}
+};
+
+class DSF: public gam::DSF<REAL> {
+public:
+	DSF(REAL frq=440, REAL freqRatio=1, REAL ampRatio=0.5, REAL harmonics=8) :
+		gam::DSF<REAL>(frq, freqRatio, ampRatio, harmonics) {}
+};
+
 //typedef gam::ImpulseFast ImpulseFast;
 
 // From Gamma/Filter.h --------------------------------------
