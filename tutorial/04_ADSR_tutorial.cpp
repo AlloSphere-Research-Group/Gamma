@@ -2,7 +2,7 @@
 	See COPYRIGHT file for authors and license information
 	
 	Example:		Generator / Envelope
-	Description:	Using an ADSR to control white noise. 
+	Description:	Using an ADSR to control white noise.
 */
 
 #include <stdio.h>				// for printing to stdout
@@ -29,51 +29,52 @@ int frameCount = 0;
 void audioCB(AudioIOData& io){
 
 	while(io()){
-	
-        //every frame we increment the internal clock of the attack timer.  It only returns true every 2.0 seconds. 
+
+		//every frame we increment the internal clock of the attack timer.  It only returns true every 2.0 seconds.
 		if(attackTimer()){
-            ADSRenvelope.reset();
-            releaseTimer.reset();
-            
-            //this is how you can change the ADSRenvelope's attach, decay, and release times:
-            //ADSRenvelope.lengths(0.1,0.1,0.1);
-            
-            //if you want to turn off the sustain portion of the envelope, you can call sustainDisable():
-            //ADSRenvelope.sustainDisable();
-            
-            //and if sustain is disabled, you can call loop(true) to make the ADR reset every time it completes:
-            //ADSRenvelope.loop(true);
+			ADSRenvelope.reset();
+			releaseTimer.reset();
+
+			//this is how you can change the ADSRenvelope's attach, decay, and release times:
+			//ADSRenvelope.lengths(0.1,0.1,0.1);
+
+			//if you want to turn off the sustain portion of the envelope, you can call sustainDisable():
+			//ADSRenvelope.sustainDisable();
+
+			//and if sustain is disabled, you can call loop(true) to make the ADR reset every time it completes:
+			//ADSRenvelope.loop(true);
 		}
-        
-        //ADSRenvelope.sustained() returns true if the envelope has entered its sustain mode. 
-        if(ADSRenvelope.sustained()){
-            //once the envelope is sustaining, we accumulate our release timer every frame until it fires, telling the ADSRenvelope to release().
-            if(releaseTimer()){
-                ADSRenvelope.release();
-            }
-        }
-        
-        //print the current value of the envelope every 1000 frames
-        if(frameCount % 1000 == 0){
-            std::cout<< "current envelope amplitude: " << ADSRenvelope()<<std::endl;
-        }
-        
-        //multiply constant white noise times our envelope every frame
+
+		//ADSRenvelope.sustained() returns true if the envelope has entered its sustain mode.
+		if(ADSRenvelope.sustained()){
+			//once the envelope is sustaining, we accumulate our release timer every frame until it fires, telling the ADSRenvelope to release().
+			if(releaseTimer()){
+				ADSRenvelope.release();
+			}
+		}
+
+		//print the current value of the envelope every 1000 frames
+		if(frameCount % 1000 == 0){
+			std::cout<< "current envelope amplitude: " << ADSRenvelope()<<std::endl;
+		}
+
+		//multiply constant white noise times our envelope every frame
 		float s = src() * ADSRenvelope() * 0.2;
 
-        //left channel = right channel = s
+		//left channel = right channel = s
 		io.out(0) = io.out(1) = s;
-        
-        frameCount++;
+
+		frameCount++;
 	}
 }
 
-int main(){
+int main()
+{
 	if (!startAudio(44100, audioCB)) {
 		cout << "Error starting audio." << endl;
 		return -1;
 	}
 	cout << "Press 'enter' to quit..." << endl;
 	getchar();
-    return 0;
+	return 0;
 }

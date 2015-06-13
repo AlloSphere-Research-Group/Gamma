@@ -35,7 +35,8 @@ static void setGlobalSampleRate(double sampleRate)
     gam::sampleRate(sampleRate);
 }
 
-
+/// Simple function to start running an audio thread communicating in real time
+/// to an audio card
 static bool startAudio(double sampleRate = 44100,
 					   void (* callback)(gam::AudioIOData &) = 0,
 					   void * userData = 0,
@@ -51,6 +52,7 @@ static bool startAudio(double sampleRate = 44100,
 
 // From Gamma/Oscillator.h ----------------------------------------------
 /// \ingroup SimpleGamma
+/// \copydoc gam::Accum
 class Accum: public gam::Accum<> {
 public:
     Accum(REAL frq=0.0, REAL phs=0.0) : gam::Accum<>(frq, phs) {}
@@ -61,6 +63,7 @@ public:
 //typedef gam::CSine<> CSine;
 
 /// \ingroup SimpleGamma
+/// \copydoc gam::Osc
 class Osc: public gam::Osc<REAL> {
 public:
     Osc(REAL frq=440, REAL phs=0, uint32_t size=512) : gam::Osc<REAL>(frq, phs, size) {}
@@ -68,6 +71,7 @@ public:
 };
 
 /// \ingroup SimpleGamma
+/// \copydoc gam::Sine
 class Sine: public gam::Sine<REAL> {
 public:
     Sine(REAL frq = 440.0, REAL phs = 0.0) : gam::Sine<REAL>(frq, phs) {}
@@ -79,27 +83,37 @@ public:
 //typedef gam::SineDs<> SineDs;
 //typedef gam::Buzz<> Buzz;
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::LFO
 class LFO: public gam::LFO<REAL> {
 public:
 	LFO(REAL frq = 440.0, REAL phs = 0.0, REAL mod = 0.5)
 		: gam::LFO<REAL>(frq, phs, mod) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Impulse
 class Impulse: public gam::Impulse<REAL> {
 public:
 	Impulse(REAL frq = 440.0, REAL phs = 0.0) : gam::Impulse<REAL>(frq, phs) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Saw
 class Saw: public gam::Saw<REAL> {
 public:
 	Saw(REAL frq = 440.0, REAL phs = 0.0) : gam::Saw<REAL>(frq, phs) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Square
 class Square: public gam::Square<REAL> {
 public:
 	Square(REAL frq = 440.0, REAL phs = 0.0) : gam::Square<REAL>(frq, phs) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::DSF
 class DSF: public gam::DSF<REAL> {
 public:
 	DSF(REAL frq=440, REAL freqRatio=1, REAL ampRatio=0.5, REAL harmonics=8) :
@@ -110,6 +124,8 @@ public:
 
 // From Gamma/Delay.h -------------------------------------
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Delay
 class Delay: public gam::Delay<REAL, gam::ipl::Cubic  > {
 public:
 	Delay(REAL delay) :
@@ -118,6 +134,8 @@ public:
 		gam::Delay<REAL, gam::ipl::Cubic >(maxDelay, delay) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Delay1
 class Delay1: public gam::Delay1<REAL> {
 public:
 	Delay1(REAL initialValue = 0.0) :
@@ -126,6 +144,8 @@ public:
 
 // From Gamma/Filter.h --------------------------------------
 // TODO: Is res required in low pass, hi pass and all pass biquads here?
+/// \ingroup SimpleGamma
+/// A Second-order Low pass filter
 class LowPass: public gam::Biquad<REAL, REAL> {
 public:
     LowPass(REAL frq = 1000.0, REAL res = 1.0) :
@@ -133,6 +153,8 @@ public:
 
 };
 
+/// \ingroup SimpleGamma
+/// A Second-order High pass filter
 class HiPass: public gam::Biquad<REAL, REAL> {
 public:
 	HiPass(REAL frq = 1000.0, REAL res = 1.0) :
@@ -140,6 +162,8 @@ public:
 
 };
 
+/// \ingroup SimpleGamma
+/// A Second-order All pass filter
 class AllPass: public gam::Biquad<REAL, REAL> {
 public:
 	AllPass(REAL frq = 1000.0, REAL res = 1.0) :
@@ -147,10 +171,17 @@ public:
 
 };
 
+class Reson: public gam::Reson<REAL, REAL> {
+public:
+	Reson(REAL frq = 1000.0, REAL width = 1.0) :
+		gam::Reson<REAL, REAL>(frq, width) {}
 
+};
 
 // From Gamma/Envelope.h -------------------------------------
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::Curve
 class Curve : public gam::Curve<REAL, REAL> {
 public:
 	Curve() : gam::Curve<REAL, REAL>() {}
@@ -159,20 +190,60 @@ public:
 	{}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::ADSR
 class ADSR : public gam::ADSR<REAL, REAL> {
 public:
-    ADSR(REAL att = 0.01, REAL dec = 0.1, REAL sus = 0.7, REAL rel = 1.,
-         REAL amp = 1.0, REAL crv = -4.0) :
-        gam::ADSR<REAL, REAL>(att, dec, sus, rel, amp, crv) {}
+	ADSR(REAL att = 0.01, REAL dec = 0.1, REAL sus = 0.7, REAL rel = 1.,
+		 REAL amp = 1.0, REAL crv = -4.0) :
+		gam::ADSR<REAL, REAL>(att, dec, sus, rel, amp, crv) {}
 };
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Env
+//class Env<N> : public gam::Env<N> {
+//public:
+//	Env(int numSegments = N, REAL start = 0.0) :
+//		gam::Env<numSegments>(att, dec, sus, rel, amp, crv) {}
+//};
 
 // From Gamma/Noise.h ----------------------------------------
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoiseWhite
 class NoiseWhite: public gam::NoiseWhite<> {
 public:
     NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
     NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
 };
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoiseBrown
+class NoiseBrown: public gam::NoiseBrown<> {
+public:
+	NoiseBrown() : gam::NoiseBrown<>() {} // TODO: should seed from current time
+	NoiseBrown(uint32_t seed) : gam::NoiseBrown<>(seed) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoisePink
+class NoisePink: public gam::NoisePink<> {
+public:
+	NoisePink() : gam::NoisePink<>() {} // TODO: should seed from current time
+	NoisePink(uint32_t seed) : gam::NoisePink<>(seed) {}
+};
+
+// From Gamma/Effects.h ----------------------------------------
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Pan
+class Pan: public gam::Pan<REAL> {
+public:
+	Pan(REAL pos = 0) : gam::Pan<REAL>(pos) {}
+};
+
+
+// Other classes ---------------------------------------------
 
 /// \ingroup SimpleGamma
 typedef gam::AudioDevice AudioDevice;
@@ -186,6 +257,7 @@ typedef gam::AudioIOData AudioIOData;
 namespace rnd {
 /// \ingroup SimpleGamma
 using gam::rnd::pick;
+using gam::rnd::uni;
 }
 
 namespace scl {
