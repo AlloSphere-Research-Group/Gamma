@@ -35,6 +35,20 @@ static void setGlobalSampleRate(double sampleRate)
     gam::sampleRate(sampleRate);
 }
 
+
+static bool startAudio(double sampleRate = 44100,
+					   void (* callback)(gam::AudioIOData &) = 0,
+					   void * userData = 0,
+					   int framesPerBuf=64,
+					   int outChannels = 2,
+					   int inChannels = 0)
+{
+	static gam::AudioIO io_(framesPerBuf, sampleRate, callback, userData, outChannels, inChannels);
+	setGlobalSampleRate(io_.framesPerSecond());
+	return io_.start();
+}
+
+
 // From Gamma/Oscillator.h ----------------------------------------------
 /// \ingroup SimpleGamma
 class Accum: public gam::Accum<> {

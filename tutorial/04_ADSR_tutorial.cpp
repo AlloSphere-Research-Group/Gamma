@@ -69,9 +69,11 @@ void audioCB(AudioIOData& io){
 }
 
 int main(){
-    AudioIO io(256, 44100, audioCB, NULL, 2);
-    setGlobalSampleRate(io.framesPerSecond());
-    io.start();
-    printf("Press 'enter' to quit...\n"); getchar();
+	if (!startAudio(44100, audioCB)) {
+		cout << "Error starting audio." << endl;
+		return -1;
+	}
+	cout << "Press 'enter' to quit..." << endl;
+	getchar();
     return 0;
 }
