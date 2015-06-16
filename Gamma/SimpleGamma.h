@@ -134,6 +134,9 @@ public:
 		gam::Delay<REAL, gam::ipl::Cubic >(maxDelay, delay) {}
 };
 
+//class Multitap
+//class DelayShift
+
 /// \ingroup SimpleGamma
 /// \copydoc gam::Delay1
 class Delay1: public gam::Delay1<REAL> {
@@ -142,7 +145,38 @@ public:
 		gam::Delay1<REAL>(initialValue) {}
 };
 
+//class Delay1
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Comb
+class Comb: public gam::Comb<REAL, gam::ipl::Cubic, REAL> {
+public:
+	Comb() :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>() {}
+	Comb(float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
+	Comb(float maxDelay, float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
+};
+
 // From Gamma/Filter.h --------------------------------------
+
+//class AllPass1
+//class Biquad
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::BlockDC
+class BlockDC: public gam::BlockDC<REAL, REAL> {
+public:
+	BlockDC(REAL width=35) :
+		gam::BlockDC<REAL, REAL>(width) {}
+};
+
+//class BlockNyq
+//class Filter2
+//class AllPass2
+//class Notch
+
 // TODO: Is res required in low pass, hi pass and all pass biquads here?
 /// \ingroup SimpleGamma
 /// A Second-order Low pass filter
@@ -177,6 +211,11 @@ public:
 		gam::Reson<REAL, REAL>(frq, width) {}
 
 };
+
+//class Hilbert
+//class Integrator
+//class MovingAvg
+//class OnePole
 
 // From Gamma/Envelope.h -------------------------------------
 
