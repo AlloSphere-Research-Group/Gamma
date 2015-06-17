@@ -1,14 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(Gamma)
 
-message("==== Configuring Gamma.")
-set(CMAKE_BUILD_TYPE Release)
-
-string(REGEX MATCH ".*\\*.*" match "${CMAKE_CURRENT_SOURCE_DIR}")
-
-IF(NOT ${match} STREQUAL "")
-  message(FATAL_ERROR "Error: Please remove '*' from path!" ) # This avoids issues with the run script
-ENDIF()
+message(STATUS "==== Configuring Gamma.")
 
 # Gamma Library
 set(GAMMA_SRC src/arr.cpp
@@ -27,7 +20,9 @@ set(GAMMA_SRC src/arr.cpp
   src/SoundFile.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_library(Gamma ${GAMMA_SRC})
+file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
+
+add_library(Gamma ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/bin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
@@ -35,9 +30,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 # TODO: allow choosing static or dynamic libraries
 
 if(USE_CPP_11)
-  message("Using c++11..")
+  message(STATUS "Using c++11..")
   if(USE_LIB_CPP)
-    message("Using libc++..")
+    message(STATUS "Using libc++..")
     set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
   else(USE_LIB_CPP)
     set(CMAKE_CXX_FLAGS "-std=c++11")
@@ -49,9 +44,9 @@ endif(USE_CPP_11)
 find_package(Portaudio REQUIRED)
 find_package(LibSndFile REQUIRED)
 find_package(Threads REQUIRED)
-message("-- Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
-message("-- libsndfile: ${SNDFILE_LIBRARY}")
-message("-- threading: ${CMAKE_THREAD_LIBS_INIT}")
+message(STATUS "Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
+message(STATUS "libsndfile: ${SNDFILE_LIBRARY}")
+message(STATUS "threading: ${CMAKE_THREAD_LIBS_INIT}")
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
 
@@ -63,6 +58,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   find_library(AUDIOTOOLBOX_FM AudioToolbox)
   set(PA_FRAMEWORKS ${AUDIOUNIT_FM} ${COREAUDIO_FM} ${CORESERVICES_FM} ${AUDIOTOOLBOX_FM})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set_target_properties(Gamma PROPERTIES COMPILE_FLAGS "-fPIC") #Needed to use Gamma with certain frameworks, e.g. JUCE
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 set(GAMMA_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
   ${PORTAUDIO_LIBRARIES}
@@ -84,16 +83,15 @@ set_target_properties(Gamma
 # Install target
 
 install(TARGETS Gamma DESTINATION lib)
-file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
 install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
 
 # Run from path
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR}) # use only if cmake was run from the Gamma directory
-    if((BUILD_DIR) OR (BUILD_APP_FILE))
-      include(cmake_modules/CMakeRunTargets.cmake)
-      set(BUILD_EXAMPLES 0)
-    endif((BUILD_DIR) OR (BUILD_APP_FILE))
-endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+if((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
+    set(BUILD_DIR ${GAMMA_BUILD_DIR})
+    set(BUILD_APP_FILE ${GAMMA_BUILD_APP_FILE})
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/CMakeRunTargets.cmake)
+    set(BUILD_EXAMPLES 0)
+endif((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 
 # Examples -----------------------------------------------
 
