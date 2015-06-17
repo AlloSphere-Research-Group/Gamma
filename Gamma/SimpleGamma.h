@@ -249,14 +249,6 @@ public:
 // From Gamma/Noise.h ----------------------------------------
 
 /// \ingroup SimpleGamma
-/// \copydoc gam::NoiseWhite
-class NoiseWhite: public gam::NoiseWhite<> {
-public:
-    NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
-    NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
-};
-
-/// \ingroup SimpleGamma
 /// \copydoc gam::NoiseBrown
 class NoiseBrown: public gam::NoiseBrown<> {
 public:
@@ -272,13 +264,66 @@ public:
 	NoisePink(uint32_t seed) : gam::NoisePink<>(seed) {}
 };
 
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoiseWhite
+class NoiseWhite: public gam::NoiseWhite<> {
+public:
+    NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
+    NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
+};
+
 // From Gamma/Effects.h ----------------------------------------
+
+//class AM
+//class Biquad3
+//class Burst
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Chirp
+class Chirp : public gam::Chirp<REAL> {
+public:
+	Chirp(REAL freq1=220, REAL freq2=0, REAL decay60=0.2)
+		: gam::Chirp<REAL>(freq1, freq2, decay60) {}
+};
+
+//class ChebyN
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Chorus
+class Chorus : public gam::Chorus<REAL> {
+public:
+	Chorus(float delay=0.0021, float depth=0.002, float freq=1, float ffd=0.9, float fbk=0.1)
+		: gam::Chorus<REAL>(delay, depth, freq, ffd, fbk) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::FreqShift
+class FreqShift : public gam::FreqShift<REAL> {
+public:
+	FreqShift(REAL shift = 1) : gam::FreqShift<REAL>(shift) {}
+};
+
+//class MonoSynth
 
 /// \ingroup SimpleGamma
 /// \copydoc gam::Pan
 class Pan: public gam::Pan<REAL> {
 public:
 	Pan(REAL pos = 0) : gam::Pan<REAL>(pos) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Pluck
+class Pluck: public gam::Pluck {
+public:
+	Pluck(REAL freq=440, REAL decay=0.99) : gam::Pluck(freq, decay) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Quantizer
+class Quantizer: public gam::Quantizer {
+public:
+	Quantizer(REAL freq=2000, REAL step=0) : gam::Quantizer(freq, step) {}
 };
 
 
