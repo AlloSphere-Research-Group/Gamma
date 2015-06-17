@@ -40,11 +40,16 @@ public:
 
 	void freq(float v);				///< Set frequency
 	void freqI(uint32_t v);			///< Set fixed-point frequency
+	void freqAdd(float v);			///< Add value to frequency for 1 sample
+	void freqMul(float v);			///< Multiply frequency by value for 1 sample
 	void phase(float v);			///< Set phase from [0, 1) of one period
 	void phaseMax();				///< Set phase to maximum value
 	void phaseAdd(float v);			///< Add value to phase [0, 1)
 	void period(float v);			///< Set period length
+
 	void reset(){ mPhaseI=0; mSp.reset(); }	///< Reset phase accumulator
+	void finish(){ phaseMax(); }	///< Set phase to end (maximum value)
+
 	Sp& phsInc(){ return mSp; }		///< Get phase increment strategy
 
 	/// Returns true if tap is done
@@ -57,12 +62,9 @@ public:
 	float phase() const;			///< Get phase in [0, 1)
 	uint32_t phaseI() const;		///< Get fixed-point phase
 
-	/// Returns 0x80000000 on phase wrap, 0 otherwise
-	
-	/// The return value can be used as a bool.  It's an integer because it
-	/// saves a conditional check converting to a bool.
-	uint32_t cycle();
-	uint32_t operator()();			///< Alias of cycle()
+	/// Returns true on phase wrap, false otherwise
+	bool cycle();
+	bool operator()();				///< Alias of cycle()
 
 	uint32_t nextPhase();			///< Increment phase and return updated phase
 	uint32_t nextPhase(float freqOffset);
@@ -110,17 +112,20 @@ private:
 
 /// \tparam Sp	Phase increment strategy (e.g., phsInc::Loop, phsInc::Oneshot)
 /// \tparam Td	Domain type
-///\ingroup Oscillators 
+///\ingroup Oscillators
 template <class Sp = phsInc::Loop, class Td = DomainObserver>
 class Sweep : public Accum<Sp, Td> {
 public:
 	/// \param[in] frq		Frequency
 	/// \param[in] phs		Phase in [0,1)
-	Sweep(float frq=440, float phs=0): Base(frq, phs){}
+	Sweep(float frq=440, float phs=0)
+	:	Accum<Sp, Td>(frq, phs){}
 
-	float operator()(){ Base::cycle(); return Base::phase(); }
-
-private: typedef Accum<Sp,Td> Base;
+	float operator()(){
+		float r = this->phase();
+		this->nextPhase();
+		return r;
+	}
 };
 
     
@@ -145,12 +150,15 @@ public:
 	Tv nextPhase(Tv frqOffset);
 
 	void freq(Tv v);		///< Set frequency
+	void freqAdd(Tv v);		///< Add value to frequency for 1 sample
+	void freqMul(Tv v);		///< Multiply frequency by value for 1 sample
 	void period(Tv v);		///< Set period length
 	void phase(Tv v);		///< Set phase from [0, 1) of one period
 	void phaseAdd(Tv v);	///< Add value to unit phase
 	void amp(Tv v);			///< Set amplitude
 	
 	Tv freq() const;		///< Get frequency
+	Tv freqUnit() const;	///< Get frequency in [0, 1)
 	Tv period() const;		///< Get period
 	Tv phase() const ;		///< Get normalized phase in [0, 1)
 	Tv amp() const;			///< Get amplitude
@@ -197,13 +205,18 @@ template<
 class Osc : public Accum<Sp,Td>, public ArrayPow2<Tv>{
 public:
 
+	/// Default constructor does not allocate table memory
+	Osc()
+	:	ArrayPow2<Tv>(defaultArray<Tv>(), 1)
+	{}
+
 	/// Constructor that allocates an internal table
 
 	/// \param[in]	frq			Frequency
 	/// \param[in]	phs			Phase in [0, 1)
 	/// \param[in]	size		Size of table (actual number is power of 2 ceiling)
-	Osc(float frq=440, float phs=0, uint32_t size=512)
-	:	Base(frq, phs), ArrayPow2<Tv>(size, Tv())
+	Osc(float frq, float phs=0, uint32_t size=512)
+	:	Accum<Sp,Td>(frq, phs), ArrayPow2<Tv>(size, Tv())
 	{}
 
 	/// Constructor that references an external table
@@ -212,17 +225,19 @@ public:
 	/// \param[in]	phs			Phase in [0, 1)
 	/// \param[in]	src			A table to use as a reference
 	Osc(float frq, float phs, ArrayPow2<Tv>& src)
-	:	Base(frq, phs), ArrayPow2<Tv>(src.elems(), src.size())
+	:	Accum<Sp,Td>(frq, phs), ArrayPow2<Tv>(src.elems(), src.size())
 	{}
 
 
 	/// Generate next sample
 	Tv operator()(){
-		this->nextPhase(); return val();
+		Tv r = val();
+		this->nextPhase();
+		return r;
 	}
 
 	/// Get current value
-	Tv val() const { return mIpol(*this, phaseI()); }
+	Tv val() const { return mIpol(table(), this->phaseI()); }
 	
 	/// Add sine to table
 	
@@ -238,18 +253,12 @@ public:
 		return *this;
 	}
 
-	/// Zero table elements
-	void zero(){ this->assign(Tv(0)); }
-
 	/// Get reference to table
 	ArrayPow2<Tv>& table(){ return *this; }
+	const ArrayPow2<Tv>& table() const { return *this; }
 
-//	using ArrayPow2<Tv>::elems; using ArrayPow2<Tv>::size;
 protected:
 	Si<Tv> mIpol;
-private:
-	ACCUM_INHERIT
-	typedef Accum<Sp,Td> Base;
 };
 
 
@@ -370,6 +379,9 @@ public:
 	/// Set frequency
 	void freq(Tv v){ Base::freq(v*Td::ups()); }
 
+	/// Set period
+	void period(Tv v){ Base::freq(Td::ups()/v); }
+
 	/// Set all control parameters
 	void set(Tv frq, Tv amp, Tv phs=0){ Base::set(frq*Td::ups(), phs, amp); }
 
@@ -452,7 +464,16 @@ public:
 
 	/// Set amplitude and phase
 	void ampPhase(Tv a=1, Tv p=0){ set(freq(), a, Base::decay(), p); }
-	
+
+	/// Set decay length
+	void decay(Tv v){ Base::decay(decayFactor(v)); }
+
+	/// Set frequency
+	void freq(Tv v){ Base::freq(v*Td::ups()); }
+
+	/// Set period
+	void period(Tv v){ Base::freq(Td::ups()/v); }
+
 	/// Set all control parameters
 
 	/// \param[in]	frq		Frequency
@@ -463,7 +484,7 @@ public:
 		Base::set(
 			frq * Td::ups(),
 			phs,
-			dcy > Tv(0) ? Tv(scl::radius60(dcy, Td::ups())) : Tv(1),
+			decayFactor(dcy),
 			amp
 		);
 	}
@@ -479,6 +500,9 @@ public:
 
 private:
 	typedef gen::RSin2<Tv> Base;
+	Tv decayFactor(Tv length){
+		return length > Tv(0) ? Tv(scl::radius60(length, Td::ups())) : Tv(1);
+	}
 };
 
 
@@ -573,7 +597,7 @@ public:
 	float down();		///< Downward ramp (1 to -1)
 	float even3();		///< Even harmonic sine-like wave (3rd order)
 	float even5();		///< Even harmonic sine-like wave (5th order)
-	float imp();		///< Impulse (occurs at beginning of cycle)
+	float imp();		///< Impulse train with aliasing reduction
 	float line2();		///< 2-segment line. mod changes wave from down to tri to up
 	float para();		///< Parabolic wave (triangle wave with all harmonics)
 	float pulse();		///< Pulse (up + down). 'mod' controls pulse width
@@ -587,6 +611,7 @@ public:
 	float cosU();		///< Unipolar cosine based on 3rd order polynomial
 	float downU();		///< Unipolar downward ramp
 	float hann();		///< Hann window
+	float impU();		///< Unipolar impulse train
 	float line2U();		///< Unipolar line2
 	float paraU();		///< Unipolar parabolic wave
 	float pulseU();		///< Unipolar pulse
@@ -605,6 +630,51 @@ public:
 private:
 	typedef Accum<Sp,Td> Base;
 	uint32_t mMod;			// Modifier parameter
+};
+
+
+
+/// Differenced wave oscillator
+
+/// This oscillator uses a difference between two waveforms to reduce aliasing.
+/// Computation time is higher than that of an LFO unit generator, however,
+/// the output exhibits far less aliasing at high frequencies.
+template <class Sp = phsInc::Loop, class Td = DomainObserver>
+class DWO : public Accum<Sp,Td>{
+public:
+
+	DWO();
+	
+	/// \param[in] frq		Frequency
+	/// \param[in] phase	Phase in [0, 1)
+	/// \param[in] mod		Modifier amount in [0, 1)
+	DWO(float frq, float phase=0, float mod=0.5);
+
+
+	DWO& mod(double n);		///< Set modifier from unit value
+	DWO& modI(uint32_t v);	///< Set modifier from integer
+
+	/// Get modifier value
+	uint32_t modI() const { return mMod; }
+	double mod() const { return mMod / 4294967296.; }
+
+	/// Set frequency
+	void freq(float v);
+
+	float up();				///< Upward saw
+	float down();			///< Downward saw
+	float sqr();			///< Square
+	float tri();			///< Triangle
+	float pulse();			///< Pulse
+
+	virtual void onDomainChange(double r);
+
+private:
+	typedef Accum<Sp,Td> Base;
+	uint32_t mMod;			// Modifier parameter
+	float mGain;
+	//float mPrev;
+	//float diff(float v);
 };
 
 
@@ -632,23 +702,25 @@ public:
 	void antialias();			///< Adjust number of harmonics to prevent aliasing
 	void harmonics(Tv num);		///< Set number of harmonics
 	void harmonicsMax();		///< Set number of harmonics to fill Nyquist range
+	void normalize(bool v);		///< Whether to normalize amplitude
 
 	Tv operator()();			///< Returns next sample of all harmonic impulse
 	Tv odd();					///< Returns next sample of odd harmonic impulse
-	Tv saw(Tv intg=0.997);		///< Returns next sample of saw waveform
-	Tv square(Tv intg=0.997);	///< Returns next sample of square waveform
+	Tv saw(Tv intg=0.999);		///< Returns next sample of saw waveform
+	Tv square(Tv intg=0.999);	///< Returns next sample of square waveform
 	
-	Tv maxHarmonics();			///< Get number of harmonics below Nyquist based on current settings
+	Tv maxHarmonics() const;	///< Get number of harmonics below Nyquist based on current settings
 
 	virtual void onDomainChange(double r);
 
 protected:
 	Tv mAmp;			// amplitude normalization factor
-	Tv mN;				// # harmonics
+	Tv mN;				// actual number of harmonics
 	Tv mNDesired;		// desired number of harmonics
 	Tv mNFrac;		
-	Tv mSPU_2;			// cached locals
+	Tv mSPU_2;			// cached local
 	Tv mPrev;			// previous output for integration
+	bool mNormalize;
 	void setAmp();
 private: typedef AccumPhase<Tv,Td> Base;
 };
@@ -678,6 +750,8 @@ public:
 	virtual void onDomainChange(double r){
 		Base::onDomainChange(r); freq(AccumPhase<Tv,Td>::freq()); }
 
+	using Buzz<Tv,Td>::freq; // needed for getter
+
 private: typedef Buzz<Tv,Td> Base;
 };
 
@@ -705,7 +779,7 @@ struct Saw : public Impulse<Tv,Td> {
 	
 	/// \param[in] itg		Leaky integration factor
 	///
-	Tv operator()(Tv itg=0.997){ return Impulse<Tv,Td>::saw(itg); }
+	Tv operator()(Tv itg=0.999){ return Impulse<Tv,Td>::saw(itg); }
 };
 
 
@@ -732,7 +806,7 @@ struct Square : public Impulse<Tv,Td> {
 	
 	/// \param[in] itg		Leaky integration factor
 	///
-	Tv operator()(Tv itg=0.997){ return Impulse<Tv,Td>::square(itg); }
+	Tv operator()(Tv itg=0.999){ return Impulse<Tv,Td>::square(itg); }
 };
 
 
@@ -767,10 +841,10 @@ public:
 	void harmonics(Tv v);		///< Set number of harmonics
 	void harmonicsMax();		///< Set number of harmonics to fill Nyquist range
 
-	Tv ampRatio();				///< Get amplitude ratio
-	Tv freqRatio();				///< Get frequency ratio
-	Tv harmonics();				///< Get current number of harmonics
-	Tv maxHarmonics();			///< Get maximum number of harmonics for current settings
+	Tv ampRatio() const;		///< Get amplitude ratio
+	Tv freqRatio() const;		///< Get frequency ratio
+	Tv harmonics() const;		///< Get current number of harmonics
+	Tv maxHarmonics() const;	///< Get maximum number of harmonics for current settings
 	
 	virtual void onDomainChange(double r);
 
@@ -789,51 +863,60 @@ protected:
 
 
 
-// Simple band-limited impulse generator
+/// Upsamples and interpolates a signal
 
-// This uses a fast, simplified formula for generating a band-limited impulse,
-// but only operates at integer divisions of the Nyquist frequency.
-/// \ingroup Oscillators 
-class ImpulseFast : public DomainObserver {
+/// This interpolates between the samples of a lower-rate signal. Use cases
+/// include a sample-and-hold and a low-frequency noise generator.
+///
+/// \tparam Gen	Signal generator
+/// \tparam Si	Sequence interpolation strategy
+/// \tparam Sp	Phase increment strategy
+/// \tparam Td	Domain type
+/// \ingroup Oscillators
+template <
+	class Gen = gen::Default<>,
+	template <typename> class Si = iplSeq::Linear,
+	class Sp = phsInc::Loop,
+	class Td = DomainObserver
+>
+class Upsample : public Accum<Sp,Td>{
 public:
-	ImpulseFast(): mPhase(0), mOffset(0){ freq(0); }
 
+	typedef typename Gen::value_type value_type;
 
-	/// Set frequency
-	void freq(double v){
-		double samples = spu() / v;
-		
-		uint32_t period = (uint32_t)(samples);
-		//period &= 0xfffffffe;		// force period to be even
-									// odd periods introduce DC
-
-		mPeriod = (double)period;
-		
-		if(scl::even(period))	mOffset = 0.;
-		//else					mOffset = 0.5f / mPeriod;
+	/// \param[in] frq		Frequency of lower-rate signal
+	Upsample(float frq=440)
+	:	Accum<Sp,Td>(frq)
+	{
+		this->finish();
+		mIpl.push(0);
 	}
 
-
-	/// Generate next sample
-	float operator()(){
-		float v = 0.f;
-
-		if(mPhase >= mPeriod){
-			mPhase -= mPeriod;
-			v = 1.f;
+	// Upsample an external generator
+	template <class SampleGen>
+	value_type operator()(SampleGen& gen){
+		if(this->cycle()){
+			mIpl.push(gen());
 		}
-		else if(scl::even((uint32_t)mPhase)){
-			v = -1.f/(mPeriod * 0.5f - 1.f);
-		}
-		
-		++mPhase;
-		return v + mOffset;
+		return mIpl(this->phase());
 	}
-	
-protected:
-	double mPhase;		// phase in samples
-	double mPeriod;		// period in samples;
-	float mOffset;		// DC compensation
+
+	// Sample and interpolate a signal
+	value_type operator()(value_type in){
+		return (*this)(gen::Val<value_type>(in));
+	}
+
+	// Upsample internal generator
+	value_type operator()(){
+		return (*this)(mGen);
+	}
+
+	/// Get internal generator
+	Gen& gen(){ return mGen; }
+
+private:
+	Gen mGen;
+	Si<value_type> mIpl;
 };
 
 
@@ -842,62 +925,63 @@ protected:
 
 namespace{
 
-	// Convert unit floating-point to fixed-point integer.
-	// 32-bit float is good enough here since [0.f, 1.f) uses 29 bits.
-	inline uint32_t mapFI(float v){
-		//return scl::unitToUInt(v);
-		//return (uint32_t)(v * 4294967296.);
-		return castIntRound(v * 4294967296.);
-	}
+// Convert unit floating-point to fixed-point integer.
+// 32-bit float is good enough here since [0.f, 1.f) uses 29 bits.
+inline uint32_t mapFI(float v){
+	//return scl::unitToUInt(v);
+	//return (uint32_t)(v * 4294967296.);
+	return castIntRound(v * 4294967296.);
+}
 
-	// Convert fixed-point integer to unit floating-point.
-	inline double mapIF(uint32_t v){
-		return v/4294967296.;
-		//return uintToUnit<float>(v); // not enough precision
-	}
+// Convert fixed-point integer to unit floating-point.
+inline double mapIF(uint32_t v){
+	return v/4294967296.;
+	//return uintToUnit<float>(v); // not enough precision
+}
 
 };
 
 
 //---- Accum
-    
-template<class St, class Td> Accum<St,Td>::Accum(float f, float p)
+template<class St, class Td>
+Accum<St,Td>::Accum(float f, float p)
 :	mFreq(f), mFreqToInt(4294967296.), mFreqI(0)
 {
 	Td::refreshDomain();
 	phase(p);
-	//(p >= 1.f) ? phaseMax() : this->phase(p);
 }
 
-template<class St, class Td> inline uint32_t Accum<St,Td>::mapFreq(float v) const {
+template<class St, class Td>
+inline uint32_t Accum<St,Td>::mapFreq(float v) const {
 	//return mapFI(v * Td::ups());
 	return castIntRound(v * mFreqToInt);
 }
 
-template<class St, class Td> void Accum<St,Td>::onDomainChange(double r){ //printf("Accum: onDomainChange (%p)\n", this);
+template<class St, class Td>
+void Accum<St,Td>::onDomainChange(double r){ //printf("Accum: onDomainChange (%p)\n", this);
 	mFreqToInt = 4294967296. / Td::spu();
-
-	uint32_t fprev = mFreqI;
 	freq(mFreq);
-	
-	// ensure phase will be correct value upon next increment
-	mPhaseI = mPhaseI + fprev - mFreqI;
 }
 
-template<class St, class Td> inline void Accum<St,Td>::freq(float v){
+template<class St, class Td>
+inline void Accum<St,Td>::freq(float v){
 	mFreq = v;
 	mFreqI= mapFreq(v);
 }
 
-template<class St, class Td> inline void Accum<St,Td>::freqI(uint32_t v){
+template<class St, class Td>
+inline void Accum<St,Td>::freqI(uint32_t v){
 	mFreqI= v;
 	mFreq = mapIF(v) * Td::spu();
 }
 
+template<class St, class Td> inline void Accum<St,Td>::freqAdd(float v){ phaseAdd(v*Td::ups()); }
+template<class St, class Td> inline void Accum<St,Td>::freqMul(float v){ freqAdd((v-1.f)*freq()); }
+
 template<class St, class Td> inline void Accum<St,Td>::period(float v){ freq(1.f/v); }
-template<class St, class Td> inline void Accum<St,Td>::phase(float v){ mPhaseI = mapFI(v) - mFreqI; }
+template<class St, class Td> inline void Accum<St,Td>::phase(float v){ mPhaseI = mapFI(v); }
 template<class St, class Td> inline void Accum<St,Td>::phaseAdd(float v){ mSp(mPhaseI, mapFI(v)); }
-template<class St, class Td> inline void Accum<St,Td>::phaseMax(){ mPhaseI = 0xffffffff; }
+template<class St, class Td> void Accum<St,Td>::phaseMax(){ mPhaseI = 0xffffffff; }
 
 template<class St, class Td> inline float Accum<St,Td>::freq() const { return mFreq; }
 template<class St, class Td> inline uint32_t Accum<St,Td>::freqI() const { return mFreqI; }
@@ -907,14 +991,20 @@ template<class St, class Td> inline float Accum<St,Td>::phase() const { return m
 template<class St, class Td> inline uint32_t Accum<St,Td>::phaseI() const { return mPhaseI; }
 
 template<class St, class Td> inline uint32_t Accum<St,Td>::nextPhase(float frqOffset){
-	return mSp(mPhaseI, mFreqI + mapFreq(frqOffset));
+	uint32_t p = mPhaseI;
+	mSp(mPhaseI, mFreqI + mapFreq(frqOffset)); // apply phase inc strategy
+	return p;
 }
 
-template<class St, class Td> inline uint32_t Accum<St,Td>::nextPhase(){ return mSp(mPhaseI, mFreqI); }
+template<class St, class Td> inline uint32_t Accum<St,Td>::nextPhase(){
+	uint32_t p = mPhaseI;
+	mSp(mPhaseI, mFreqI); // apply phase inc strategy
+	return p;
+}
 
-template<class St, class Td> inline uint32_t Accum<St,Td>::operator()(){ return cycle(); }
+template<class St, class Td> inline bool Accum<St,Td>::operator()(){ return cycle(); }
 
-template<class St, class Td> inline uint32_t Accum<St,Td>::cycle(){ return cycles() & 0x80000000; }
+template<class St, class Td> inline bool Accum<St,Td>::cycle(){ return bool(cycles() & 0x80000000); }
 
 //template<class St, class Td> inline uint32_t Accum<St,Td>::cycle(uint32_t mask){
 //	return cycles() & mask;
@@ -958,8 +1048,13 @@ AccumPhase<Tv, Td>::AccumPhase(Tv f, Tv p, Tv a)
 	this->phase(p);
 }
 
-template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::mapFreq(Tv v) const { return v*mFreqToInc; }
-template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::mapPhase(Tv v) const { return v*Tv(2)*mAmp; }
+template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::mapFreq(Tv v) const {
+	return v*mFreqToInc;
+}
+
+template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::mapPhase(Tv v) const {
+	return v*Tv(2)*mAmp;
+}
 
 template<class Tv, class Td>
 inline Tv AccumPhase<Tv, Td>::nextPhaseUsing(Tv inc){
@@ -978,6 +1073,8 @@ template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::nextPhase(Tv frqMod){
 }
 
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freq(Tv v){ mInc = mapFreq(v); }
+template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqAdd(Tv v){ nextPhaseUsing(mapFreq(v)); }
+template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqMul(Tv v){ nextPhaseUsing(mapFreq(v*mInc)); }
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::period(Tv v){ freq(Tv(1)/v); }
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::phase(Tv v){ mPhase = mapPhase(v); }
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::phaseAdd(Tv v){ mPhase += mapPhase(v); }
@@ -989,6 +1086,7 @@ template<class Tv, class Td> inline void AccumPhase<Tv, Td>::amp(Tv v){
 }
 
 template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::freq() const { return mInc/mFreqToInc; }
+template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::freqUnit() const { return freq()*this->ups(); }
 template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::period() const { return Tv(1)/freq(); }
 template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::phase() const { return mPhase/(Tv(2)*mAmp); }
 template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::amp() const { return mAmp; }
@@ -1071,9 +1169,18 @@ template<class Tv, class Td> void CSine<Tv, Td>::onDomainChange(double r){
 template<class St, class Td> TLFO::LFO(): Base(){ mod(0.5); }
 template<class St, class Td> TLFO::LFO(float f, float p, float m): Base(f, p){ mod(m); }
 
-template<class St, class Td> inline TLFO& TLFO::set(float f, float p, float m){ this->freq(f); this->phase(p); return mod(m); }
-template<class St, class Td> inline TLFO& TLFO::mod(double v){ return modI(castIntRound(v*4294967296.)); }
-template<class St, class Td> inline TLFO& TLFO::modI(uint32_t v){ mMod=v; return *this; }
+template<class St, class Td> inline TLFO& TLFO::set(float f, float p, float m){
+	this->freq(f);
+	this->phase(p);
+	return mod(m);
+}
+template<class St, class Td> inline TLFO& TLFO::mod(double v){
+	return modI(castIntRound(v*4294967296.));
+}
+template<class St, class Td> inline TLFO& TLFO::modI(uint32_t v){
+	mMod=v;
+	return *this;
+}
 
 template<class St, class Td> inline float TLFO::line2(){
 	using namespace gam::scl;
@@ -1102,7 +1209,7 @@ DEF(cos(),		up(); r = -1.f - r*r*(4.f*scl::abs(r)-6.f) )
 DEF(down(),		scl::rampDown(nextPhase()))
 DEF(even3(),	up(); static const float c=-1.50f*sqrtf(3.f); r *= (1.f-r*r)*c;)
 DEF(even5(),	up(); static const float c=-1.25f*::powf(5.f,0.25f); r *= (1.f-scl::pow4(r))*c;)
-DEF(imp(),		scl::pulseU(nextPhase(), this->freqI()) )
+DEF(imp(),		scl::pulse(nextPhase(), this->freqI()) )
 DEF(para(),		paraU()*1.5f - 0.5f)
 DEF(pulse(),	scl::pulse(nextPhase(), mMod))
 DEF(sinPara(),	scl::sinPara(nextPhase()))
@@ -1114,6 +1221,7 @@ DEF(up2(),		scl::rampUp2(nextPhase(), mMod))
 DEF(cosU(),		tri(); r = scl::mapSinSU(r))
 DEF(downU(),	scl::rampDownU(nextPhase()))
 DEF(hann(),		tri(); r = r * (0.25f * r*r - 0.75f) + 0.5f)
+DEF(impU(),		scl::pulseU(nextPhase(), this->freqI()) )
 DEF(paraU(),	up(); r*=r;)
 DEF(pulseU(),	scl::pulseU(nextPhase(), mMod))
 DEF(sqrU(),		scl::squareU(nextPhase()))
@@ -1125,45 +1233,193 @@ DEF(patU(),		scl::rampUpU(nextPhase() & mMod))
 
 DEF(patU(uint32_t mul), scl::rampUpU((nextPhase() & mMod) * mul))
 
-DEF(sineT9(),	up(); r = scl::sinT9(r * M_PI))
-DEF(sineP9(),	up(); r = scl::sinP9(r))
+/* The input domain for these is [-1,1] corresponding to [-pi,pi], but that will
+give us an upside-down sine. We therefore use a downward ramp to flip the wave
+on the time axis.*/
+DEF(sineT9(),	down(); r = scl::sinT9(r * M_PI))
+DEF(sineP9(),	down(); r = scl::sinP9(r))
 
 #undef DEF
-
 #undef TLFO
+
+
+
+template <class Sp, class Td>
+DWO<Sp,Td>::DWO()
+//:	mPrev(0)
+{
+	mod(0.5);
+}
+
+template<class Sp, class Td>
+DWO<Sp,Td>::DWO(float f, float p, float m)
+//:	mPrev(0)
+{
+	freq(f);
+	this->phase(p);
+	mod(m);
+}
+
+template<class Sp, class Td>
+inline DWO<Sp,Td>& DWO<Sp,Td>::mod(double v){
+	return modI(castIntRound(v*4294967296.));
+}
+template<class Sp, class Td>
+inline DWO<Sp,Td>& DWO<Sp,Td>::modI(uint32_t v){
+	mMod=v;
+	return *this;
+}
+
+template <class Sp, class Td>
+inline void DWO<Sp,Td>::freq(float v){
+	Base::freq(v);
+	float freq1 = this->freqUnit();
+	// Very low freq will produce quantization noise
+	if(freq1 < 1e-5) freq1 = 1e-5;
+	mGain = 0.25/freq1;
+}
+
+/* Ideally we would use a differencing filter, however, it has a serious shortcoming. Any sudden changes in phase (or frequency) will lead a large amplitude impulse in the output which becomes worse the lower the frequency. A related problem is what to initialize the filter's previous input sample to. Instead of a filter, we use an analytic approach which subtracts two phase-shifted waveforms.
+*/
+namespace{
+	inline float para01(uint32_t p){
+		float s = scl::rampUp(p);
+		return s*s;
+	}
+	inline float triangle02(uint32_t p){
+		p = (p >> 9) | Expo4<float>(); // [4, 8)
+		return scl::abs(punUF(p) - 6.f);
+	}
+}
+
+template <class Sp, class Td>
+inline float DWO<Sp,Td>::up(){
+	/*
+	float s = para01(this->nextPhase());
+	return diff(s);//*/
+	//*
+	uint32_t p = this->nextPhase();
+	float s = para01(p);
+	float t = para01(p + this->freqI());
+	return (t - s)*mGain;//*/
+}
+
+template <class Sp, class Td>
+inline float DWO<Sp,Td>::down(){
+	/*float s = para01(this->nextPhase());
+	return diff(-s);*/
+	uint32_t p = this->nextPhase();
+	float s = para01(p);
+	float t = para01(p + this->freqI());
+	return (s - t)*mGain;
+}
+
+template <class Sp, class Td>
+inline float DWO<Sp,Td>::sqr(){
+	/*
+	float s = triangle02(this->nextPhase());
+	return diff(s);//*/
+	//*
+	uint32_t p = this->nextPhase();
+	float s = triangle02(p);
+	float t = triangle02(p + this->freqI());
+	return (t - s)*mGain;//*/
+}
+
+template <class Sp, class Td>
+inline float DWO<Sp,Td>::tri(){
+	/*
+	float s = scl::sinPara(this->nextPhase())*0.5f;
+	return diff(s);//*/
+	//*
+	uint32_t p = this->nextPhase();
+	float s = scl::sinPara(p);
+	float t = scl::sinPara(p + this->freqI());
+	return (t - s)*0.5f*mGain;//*/
+}
+
+template <class Sp, class Td>
+inline float DWO<Sp,Td>::pulse(){
+	/*
+	uint32_t p = this->nextPhase();
+	float s1 = para01(p);
+	float s2 = para01(p + mMod);
+	return diff((s1 - s2)*0.5f);//*/
+	//*
+	uint32_t p = this->nextPhase();
+	float s1 = para01(p);
+	float s2 = para01(p + mMod);
+	float s  = s1 - s2;
+	uint32_t q = p + this->freqI();
+	float t1 = para01(q);
+	float t2 = para01(q + mMod);
+	float t  = t1 - t2;
+	return (t - s)*0.5f*mGain;//*/
+}
+
+/*template <class Sp, class Td>
+inline float DWO<Sp,Td>::diff(float v){
+	float res = (v - mPrev)*mGain;
+	mPrev = v;
+	return res;
+}*/
+
+template<class Sp, class Td>
+void DWO<Sp,Td>::onDomainChange(double r){
+	Base::onDomainChange(r);
+	freq(Base::freq());
+}
 
 
 //---- Buzz
 
 template<class Tv, class Td> Buzz<Tv,Td>::Buzz(Tv f, Tv p, Tv harmonics)
-:	Base(f, p), mAmp(0), mPrev(Tv(0))
+:	Base(f, p), mAmp(0), mPrev(Tv(0)), mNormalize(true)
 {
 	onDomainChange(1);
 	this->harmonics(harmonics);
 }
 
 template<class Tv, class Td> inline void Buzz<Tv,Td>::harmonics(Tv v){
-	mN = mNDesired = scl::floor(v);
-	setAmp();
+	mNDesired = v;
+	mN = scl::floor(v);
 	mNFrac = v - mN;
+	setAmp();
 }
 
-template<class Tv, class Td> inline void Buzz<Tv,Td>::harmonicsMax(){ harmonics(maxHarmonics()); }
+template<class Tv, class Td> inline void Buzz<Tv,Td>::harmonicsMax(){
+	harmonics(maxHarmonics());
+}
 
 template<class Tv, class Td> inline void Buzz<Tv,Td>::antialias(){
-	float maxN = scl::floor(maxHarmonics());
-	mN = mNDesired > maxN ? maxN : mNDesired;
+	Tv newN = maxHarmonics();
+	newN = mNDesired > newN ? newN : mNDesired;
+
+	mN = scl::floor(newN);
+	mNFrac = newN - mN;
 	setAmp();
 }
 
-template<class Tv, class Td> inline Tv Buzz<Tv,Td>::maxHarmonics(){ return mSPU_2 / this->freq(); }
+template<class Tv, class Td> void Buzz<Tv,Td>::normalize(bool v){
+	mNormalize = v;
+	setAmp();
+}
+
+template<class Tv, class Td> inline Tv Buzz<Tv,Td>::maxHarmonics() const {
+	return mSPU_2 / this->freq();
+}
 
 template<class Tv, class Td> inline void Buzz<Tv,Td>::setAmp(){
-	// Normally, the amplitude is 1/(2N), but we will linearly interpolate
-	// based on fractional harmonics to avoid sudden changes in amplitude to
-	// the lower harmonics which is very noticeable.
-	mAmp = (mN != Tv(0)) ? (Tv(0.5) / (mN+mNFrac)) : 0;
-	//mAmp = (mN != Tv(0)) ? (Tv(0.5) / (mN)) : 0;
+
+	if(mNormalize){
+		// Normally, the amplitude is 1/(2N), but we will linearly interpolate
+		// based on fractional harmonics to avoid sudden changes in amplitude to
+		// the lower harmonics which is very noticeable.
+		mAmp = (mN != Tv(0)) ? (Tv(0.5) / (mN+mNFrac)) : 0;
+	}
+	else{
+		mAmp = Tv(0.5);
+	}
 }
 
 #define EPS 0.000001
@@ -1174,12 +1430,12 @@ template<class Tv, class Td> inline Tv Buzz<Tv, Td>::operator()(){
 	*/
 	Tv theta = this->nextPhase();
 	Tv result;
-	Tv denom = scl::sinT9(theta * Tv(0.5));
+	Tv denom = scl::sinT7(theta * Tv(0.5));
 
 	// denominator goes to zero when theta is an integer multiple of 2 pi
 	if(scl::abs(denom) < Tv(EPS)){
 		result = Tv(2) * mN * mAmp;
-		//printf("Impulse::(): oops\n");
+		//printf("Buzz::operator(): oops\n");
 	}
 	else{
 		Tv nphase = scl::wrapPhase(theta * (mN + Tv(0.5)));
@@ -1214,7 +1470,7 @@ template<class Tv, class Td> inline Tv Buzz<Tv,Td>::odd(){
 		if( theta > M_PI ) theta -= M_2PI;
 		Tv A = n2 / (n2 + n2frac);
 		result = (theta > -M_PI_2 && theta < M_PI_2) ? A : -A;
-		//printf("Impulse::odd(): oops\n");
+		//printf("Buzz::odd(): oops\n");
 	}
 	else result = scl::sinT7(scl::wrapPhase(n2 * theta)) / (denom * (n2 + n2frac));
 	
@@ -1223,9 +1479,10 @@ template<class Tv, class Td> inline Tv Buzz<Tv,Td>::odd(){
 #undef EPS
 
 template<class Tv, class Td>
-inline Tv Buzz<Tv,Td>::saw(Tv i){ return mPrev=(*this)()*0.125 + i*mPrev; }
+inline Tv Buzz<Tv,Td>::saw(Tv b){ return mPrev=(*this)() + b*mPrev; }
+
 template<class Tv, class Td>
-inline Tv Buzz<Tv,Td>::square(Tv i){ return mPrev=odd()*0.125 + i*mPrev; }
+inline Tv Buzz<Tv,Td>::square(Tv b){ return mPrev=odd() + b*mPrev; }
 
 template<class Tv, class Td> void Buzz<Tv,Td>::onDomainChange(double r){
 	Base::onDomainChange(r);
@@ -1277,7 +1534,9 @@ template<class Tv, class Td> inline void DSF<Tv,Td>::harmonics(Tv v){
 	}
 }
 
-template<class Tv, class Td> inline void DSF<Tv,Td>::harmonicsMax(){ harmonics(maxHarmonics()); }
+template<class Tv, class Td> inline void DSF<Tv,Td>::harmonicsMax(){
+	harmonics(maxHarmonics());
+}
 
 template<class Tv, class Td> inline void DSF<Tv,Td>::antialias(){
 	Tv maxN = maxHarmonics();
@@ -1286,16 +1545,27 @@ template<class Tv, class Td> inline void DSF<Tv,Td>::antialias(){
 	updateAPow();
 }
 
-template<class Tv, class Td> inline Tv DSF<Tv,Td>::ampRatio(){ return mA; }
-template<class Tv, class Td> inline Tv DSF<Tv,Td>::freqRatio(){ return mFreqRatio; }
-template<class Tv, class Td> inline Tv DSF<Tv,Td>::harmonics(){ return mN; }
+template<class Tv, class Td> inline Tv DSF<Tv,Td>::ampRatio() const {
+	return mA;
+}
+template<class Tv, class Td> inline Tv DSF<Tv,Td>::freqRatio() const {
+	return mFreqRatio;
+}
+template<class Tv, class Td> inline Tv DSF<Tv,Td>::harmonics() const {
+	return mN;
+}
 
-template<class Tv, class Td> inline Tv DSF<Tv,Td>::maxHarmonics(){
+template<class Tv, class Td> inline Tv DSF<Tv,Td>::maxHarmonics() const {
 	return scl::floor((Tv(this->spu()) * Tv(0.5)/this->freq() - Tv(1))/freqRatio() + Tv(1));
 }
 
-template<class Tv, class Td> inline void DSF<Tv,Td>::updateAPow(){ mAPow = ::pow(mA, mN); }
-template<class Tv, class Td> inline void DSF<Tv,Td>::updateBetaInc(){ mBetaInc = this->mInc * mFreqRatio; }
+template<class Tv, class Td> inline void DSF<Tv,Td>::updateAPow(){
+	mAPow = ::pow(mA, mN);
+}
+
+template<class Tv, class Td> inline void DSF<Tv,Td>::updateBetaInc(){
+	mBetaInc = this->mInc * mFreqRatio;
+}
 
 // Generalized DSF formula:
 // sum{k=0, N}( a^k sin(T + k B) )

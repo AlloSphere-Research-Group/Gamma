@@ -93,14 +93,19 @@ public:
 	T * aux(unsigned num);
 	
 	/// Get pointer to bin data
-	Complex<T> * bins() const { return mBins; }
+	Complex<T> * bins(){ return mBins; }
+	const Complex<T> * bins() const { return mBins; }
 	
 	/// Get reference to bin value
 	Complex<T>& bin(unsigned k){ return mBins[k]; }
 	
 	/// Get read-only reference to bin value
 	const Complex<T>& bin(unsigned k) const { return mBins[k]; }
-	
+
+	/// Get pointer to inverse transform buffer
+	T * bufferInverse(){ return bufInvPos(); }
+	const T * bufferInverse() const { return bufInvPos(); }
+
 	double binFreq() const;		///< Get width of frequency bins
 	unsigned numBins() const;	///< Get number of frequency bins
 	unsigned sizeDFT() const;	///< Get size of transform, in samples
@@ -152,8 +157,10 @@ protected:
 	Domain mDomFreq;
 
 	T normForward() const;	// get norm factor for forward transform values
-	T * bufPos(){ return mBuf+1; }
-	T * bufFrq(){ return mBuf; }
+	T * bufFwdPos(){ return mBuf+1; }
+	T * bufFwdFrq(){ return mBuf; }
+	T * bufInvPos(){ return mBuf+mSizeDFT+3; }
+	T * bufInvFrq(){ return mBuf+mSizeDFT+2; }
 };
 
 
@@ -217,17 +224,18 @@ public:
 
 	/// Performs forward transform on a window of samples
 	
-	/// 'src' must have at least sizeWin() number of elements.
-	///
-	void forward(const float * src);	
+	/// 'src' must have at least sizeWin() number of elements. If 'src' is 0,
+	/// then the transform is performed on the internal forward transform
+	/// buffer.
+	void forward(const float * src=0);	
 
 	/// Performs inverse transform on internal spectrum
 	
 	///	The resynthesized samples are copied into 'dst'.  The destination
 	/// array must have room for at least sizeDFT() number of elements. If 'dst'
 	/// equals 0, then the resynthesized samples are not copied, but instead
-	/// held in the internal transform buffer.
-	virtual void inverse(float * dst);
+	/// held in the internal inverse transform buffer.
+	virtual void inverse(float * dst=0);
 	
 	/// Returns true if next call to inverse() will perform the inverse transform.
 	
@@ -295,10 +303,10 @@ public:
 	bool operator()(float input);
 
 	/// Perform forward transform of an array of samples
-	void forward(const float * src);
+	void forward(const float * src=0);
 	
 	/// Get inverse transform using current spectral frame
-	virtual void inverse(float * dst);
+	virtual void inverse(float * dst=0);
 
 
 	/// Set window and zero-padding size, in samples
@@ -337,7 +345,7 @@ public:
 
 protected:
 	void computeInvWinMul();	// compute inverse normalization factor (due to overlap-add)
-	
+
 	SlidingWindow<float> mSlide;
 	float * mFwdWin;			// forward transform window
 	float * mPhases;			// copy of current phases (mag-freq mode)
@@ -503,16 +511,16 @@ template<class T>
 inline double DFTBase<T>::binFreq() const { return spu() / sizeDFT(); }
     
 template<class T>
-inline unsigned	DFTBase<T>::numBins() const { return (sizeDFT() + 2)>>1; }
+unsigned	DFTBase<T>::numBins() const { return (sizeDFT() + 2)>>1; }
     
 template<class T>
-inline unsigned	DFTBase<T>::sizeDFT() const { return mSizeDFT; }
+unsigned	DFTBase<T>::sizeDFT() const { return mSizeDFT; }
     
 template<class T>
-inline Domain& DFTBase<T>::domainFreq(){ return mDomFreq; }
+Domain& DFTBase<T>::domainFreq(){ return mDomFreq; }
     
 template<class T>
-inline T DFTBase<T>::normForward() const { return T(2) / T(sizeDFT()); }
+T DFTBase<T>::normForward() const { return T(2) / T(sizeDFT()); }
 
 template<class T>
 void DFTBase<T>::numAux(unsigned num){
@@ -571,10 +579,10 @@ inline unsigned DFT::sizeWin() const { return mSizeWin; }
 inline Domain& DFT::domainHop(){ return mDomHop; }
 
 inline bool DFT::operator()(float input){
-	bufPos()[mTapW] = input;
+	bufFwdPos()[mTapW] = input;
 
 	if(++mTapW >= sizeHop()){
-		forward(bufPos());
+		forward();
 		mTapW = 0;
 		return true;
 	}
@@ -583,7 +591,7 @@ inline bool DFT::operator()(float input){
 
 inline float DFT::operator()(){
 	if(++mTapR >= sizeHop()){
-		inverse(0);	// this is a virtual method
+		inverse();	// this is a virtual method
 		mTapR = 0;
 	}
 	return mBufInv[mTapR];
@@ -595,8 +603,8 @@ inline bool DFT::inverseOnNext(){ return mTapR == (sizeHop() - 1); }
 
 
 inline bool STFT::operator()(float input){
-	if(mSlide(bufPos(), input)){
-		forward(bufPos());
+	if(mSlide(bufFwdPos(), input)){
+		forward();
 		return true;
 	}
 	return false;

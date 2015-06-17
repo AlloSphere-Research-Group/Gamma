@@ -17,7 +17,7 @@ namespace gam{
 /// by feeding a full-wave rectification of the signal through a low-pass filter.
 ///\ingroup Filters, Envelopes, Analysis
 template <class Tv=real, class Tp=real, class Td=DomainObserver>
-class EnvFollow{
+class EnvFollow : public Td {
 public:
 
 	/// \param[in] freq		Cutoff frequency of smoothing filter
@@ -30,7 +30,11 @@ public:
 
 	/// Returns current amplitude estimate
 	Tv value() const { return lpf.last(); }
-	
+
+	/// Set lag length of filter
+	EnvFollow& lag(Tp v){ lpf.lag(v); return *this; }
+
+	/// Checks if current estimate is less than a threshold
 	bool done(Tv eps=0.001) const { return value() < eps; }
 
 	OnePole<Tv,Tp,Td> lpf;	///< Low-pass filter

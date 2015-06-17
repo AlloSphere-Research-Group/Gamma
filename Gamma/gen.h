@@ -28,9 +28,17 @@ namespace gam{
 
 namespace gen{
 
+/// Generates the default value of its associated type
+template <class T=gam::real>
+struct Default{
+	typedef T value_type;
+	T operator()() const { return T(); }					///< Generate next value
+};
+
+
 /// Single value generator
 template <class T=gam::real>
-struct Val{
+struct Val : public Default<T>{
 	Val(): val(T(0)){}										///< Constructor
 	Val(const T& v): val(v){}								///< Constructor
 	Val& operator = (const T& v){ val=v; return *this; }	///< Set value
@@ -60,12 +68,14 @@ struct Impulse : public Val<T>{ INHERIT;
 	T operator()() const {T t=val; val=0; return t;}	///< Generate next value
 };
 
+
 /// Generates a Nyquist signal, i.e., -1, 1, -1, 1, …
 template<class T=gam::real>
 struct Nyquist : public Val<T>{ INHERIT;
 	Nyquist(const T& val=T(1)): Val<T>(-val){}			///< Constructor
 	T operator()() const { return val = -val; }			///< Generate next value
 };
+
 
 ///Reciprocal sequence generator
 
@@ -356,8 +366,13 @@ template <class T=gam::real>
 struct RMulAdd: public Val<T>{ INHERIT;
 	/// Constructor
 	RMulAdd(const T& mul=T(1), const T& add=T(0), const T& val=T(0))
-	:	Val<T>((val-add)/mul), mul(mul), add(add){}		///< Constructor
+	:	Val<T>((val-add)/mul), mul(mul), add(add){}
+
 	T operator()() const { return val=val*mul+add; }	///< Generate next value
+
+	/// Go back one step
+	const T& recede() const { return val = (val-add)/mul; }
+
 	T mul;												///< Multiplication amount
 	T add;												///< Addition amount
 };
@@ -524,10 +539,16 @@ struct OnOff{
 };
 
 
-struct OneOff{
+/// Returns true once, then false until reset
+class OneOff{
+public:
 	OneOff(bool v=true): mVal(v) {}
+
+	/// Get next value
 	bool operator()(){ bool r=mVal; mVal=false; return r; }
-	void set(){ mVal=true; }
+
+	/// Reset trigger
+	void reset(){ mVal=true; }
 
 private:
 	bool mVal;

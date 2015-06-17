@@ -22,6 +22,17 @@
 namespace gam{
 
 
+/// A single element array
+
+/// This array can be referenced by default to avoid a potential null pointer
+/// dereference.
+template<class T>
+T * defaultArray(){
+	static T v(0);
+	return &v;
+}
+
+
 ///Size functor for ArrayPow2
     
 ///\ingroup Containers
@@ -59,9 +70,6 @@ template <class T, class S, class A=gam::Allocator<T> >
 class ArrayBase : private A{
 public:
 
-	/// Default constructor that does not allocate memory
-	ArrayBase();
-
 	/// Constructor that allocates memory, but does not initialize elements
 
 	/// \param[in] size		number of elements to allocate
@@ -76,8 +84,12 @@ public:
 	/// \param[in] size		size of external array
 	ArrayBase(T * src, uint32_t size);
 
-	/// \param[in] src		external array to reference
-	explicit ArrayBase(ArrayBase<T,S,A>& src);
+	/// Default constructor that does not allocate memory
+	ArrayBase();
+
+	/// \param[in] src		array to copy
+	explicit ArrayBase(const ArrayBase<T,S,A>& src);
+
 
 	virtual ~ArrayBase();
 
@@ -103,6 +115,9 @@ public:
 	/// \param[in] start	start index (inclusive)
 	ArrayBase& assign(const T& v, uint32_t end, uint32_t stride=1, uint32_t start=0);
 
+	/// Sets all elements to zero
+	ArrayBase& zero();
+
 
 	T * elems();					///< Get writable pointer to elements	
 	const T * elems() const;		///< Get read-only pointer to elements
@@ -121,6 +136,9 @@ public:
 	bool isSoleOwner() const;
 	
 	bool usingExternalSource() const;
+
+	/// Returns whether internal memory pointer is valid
+	bool valid() const;
 	
 	/// Resizes number of elements in array
 	
@@ -167,11 +185,11 @@ class Array : public ArrayBase<T, SizeArray, A>{
 public:
 	typedef ArrayBase<T, SizeArray, A> Base;
 
-	Array(): Base(){}
 	explicit Array(uint32_t size): Base(size){}
 	Array(uint32_t size, const T& init): Base(size, init){}
 	Array(T * src, uint32_t size): Base(src, size){}
-	Array(Array& src): Base(src){}
+	Array(): Base(){}
+	explicit Array(const Array& src): Base(src){}
 
 	virtual ~Array(){}
 
@@ -188,10 +206,10 @@ class ArrayPow2 : public ArrayBase<T, SizeArrayPow2, A>{
 public:
 	typedef ArrayBase<T, SizeArrayPow2, A> Base;
 
-	ArrayPow2(): Base(){}
 	explicit ArrayPow2(uint32_t size): Base(size){}
 	ArrayPow2(uint32_t size, const T& initial): Base(size, initial){}
 	ArrayPow2(T * src, uint32_t size): Base(src, size){}
+	ArrayPow2(): Base(){}
 	explicit ArrayPow2(const ArrayPow2& src): Base(src){}
 
 	virtual ~ArrayPow2(){}
@@ -303,11 +321,12 @@ protected:
 
 
 /// N-sample delay
-    
+
 /// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 struct DelayN: public Ring<T,A>{
-	using Ring<T,A>::incPos; using Ring<T,A>::pos;
+
+	DelayN(){}
 
 	/// \param[in]	size		Delay size, greater than 0
 	/// \param[in]	value		Initial value of all elements
@@ -317,9 +336,9 @@ struct DelayN: public Ring<T,A>{
 
 	/// Write new element and return oldest
 	T operator()(const T& input){
-		incPos();				// inc write pos
-		T dly = (*this)[pos()];	// read oldest element
-		(*this)[pos()] = input;	// write new element
+		this->incPos();					// inc write pos
+		T dly = (*this)[this->pos()];	// read oldest element
+		(*this)[this->pos()] = input;	// write new element
 		return dly;				//	... write pos left at last written element
 	}
 };
@@ -338,7 +357,13 @@ struct DelayN: public Ring<T,A>{
 
 template <class T, class S, class A>
 ArrayBase<T,S,A>::ArrayBase()
-:	ARRAYBASE_INIT{}
+:	ARRAYBASE_INIT
+{}
+
+template <class T, class S, class A>
+ArrayBase<T,S,A>::ArrayBase(const ArrayBase<T,S,A>& src)
+:	ARRAYBASE_INIT
+{	resize(src.size()); assign(src); }
 
 template <class T, class S, class A>
 ArrayBase<T,S,A>::ArrayBase(uint32_t sz)
@@ -354,11 +379,6 @@ template <class T, class S, class A>
 ArrayBase<T,S,A>::ArrayBase(T * src, uint32_t sz)
 :	ARRAYBASE_INIT
 {	source(src, sz); }
-
-template <class T, class S, class A>
-ArrayBase<T,S,A>::ArrayBase(ArrayBase<T,S,A>& src)
-:	ARRAYBASE_INIT
-{	source(src); }
 
 #undef ARRAYBASE_INIT
 
@@ -385,6 +405,11 @@ ArrayBase<T,S,A>& ArrayBase<T,S,A>::assign(
 ){
 	for(uint32_t i=start; i<end; i+=stride) A::construct(mElems+i, v);
 	return *this;
+}
+
+template <class T, class S, class A>
+ArrayBase<T,S,A>& ArrayBase<T,S,A>::zero(){
+	return assign(T(0));
 }
 
 template <class T, class S, class A>
@@ -435,6 +460,11 @@ bool ArrayBase<T,S,A>::isSoleOwner() const {
 template <class T, class S, class A>
 bool ArrayBase<T,S,A>::usingExternalSource() const {
 	return elems() && !managing((T*)elems());
+}
+
+template <class T, class S, class A>
+bool ArrayBase<T,S,A>::valid() const {
+	return elems() && (elems() != defaultArray<T>());
 }
 
 template <class T, class S, class A>

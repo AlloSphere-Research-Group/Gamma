@@ -19,6 +19,10 @@ template<unsigned N, class T> class Vec;
 typedef float real;				///< Default real number type
 typedef Vec<2,float > float2;	///< Vector of 2 floats
 typedef Vec<2,double> double2;	///< Vector of 2 doubles
+typedef Vec<3,float > float3;	///< Vector of 3 floats
+typedef Vec<3,double> double3;	///< Vector of 3 doubles
+typedef Vec<4,float > float4;	///< Vector of 4 floats
+typedef Vec<4,double> double4;	///< Vector of 4 doubles
 
 
 /// Polar number with argument in radians
@@ -30,7 +34,7 @@ struct Polar{
 		T elems[2];			///< Component 2-vector
 	};
 
-	Polar(const T& p=0): m(1.), p(p){}
+	Polar(const T& p=T(0)): m(T(1)), p(p){}
 	Polar(const T& m, const T& p): m(m), p(p){}
 	Polar(const Complex<T>& v){ *this = v; }
 
@@ -43,7 +47,8 @@ struct Polar{
 
 /// Complex number
 template <class T=gam::real>
-struct Complex{
+class Complex{
+public:
 
 	typedef Complex<T> C;
 
@@ -54,7 +59,7 @@ struct Complex{
 	
 	Complex(const Complex& v): r(v.r), i(v.i){}
 	Complex(const Polar<T>& v){ *this = v; }
-	Complex(const T& r=(T)1, const T& i=(T)0): r(r), i(i){}
+	Complex(const T& r=T(0), const T& i=T(0)): r(r), i(i){}
 	Complex(const T& m, const T& p, int fromPolar){ (*this) = Polar<T>(m,p); }
 
 
@@ -78,7 +83,7 @@ struct Complex{
 	template <class U>
 	C& operator = (const Complex<U>& v){ r=v.r; i=v.i; return *this; }
 
-	C& operator = (const T& v){ r=v;   i=T(0); return *this; }
+	C& operator = (const T& v){ r=v; i=T(0); return *this; }
 
 	template <class U>
 	C& set(const Complex<U>& v){ return *this = v; }
@@ -179,7 +184,8 @@ template<class T> struct NamedElems<4,T>{ T x,y,z,w; };
 /// This is fixed in size to enable better loop unrolling optimizations and to 
 /// avoid an extra 'size' data member for small sizes.
 template <unsigned N, class T>
-struct Vec : public NamedElems<N,T> {
+class Vec : public NamedElems<N,T> {
+public:
 
     using NamedElems<N,T>::x;
 
