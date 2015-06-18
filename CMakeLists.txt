@@ -3,6 +3,10 @@ project(Gamma)
 
 message(STATUS "==== Configuring Gamma.")
 
+if(NOT DEFINED BUILD_ROOT_DIR)
+  set(BUILD_ROOT_DIR "${CMAKE_SOURCE_DIR}")
+endif(NOT DEFINED BUILD_ROOT_DIR)
+
 # Gamma Library
 set(GAMMA_SRC src/arr.cpp
   src/AudioIO.cpp
@@ -21,10 +25,17 @@ set(GAMMA_SRC src/arr.cpp
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
+# Copy headers to build directory (only if header has changed)
+foreach(header ${GAMMA_INSTALL_HEADERS})
+	execute_process(COMMAND ${CMAKE_COMMAND} -E
+					copy_if_different "${header}" "${BUILD_ROOT_DIR}/build/include/${header}"
+					WORKING_DIRECTORY  "${CMAKE_CURRENT_SOURCE_DIR}")
+endforeach()
+
 
 add_library(Gamma ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/bin)
+set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
+set(EXECUTABLE_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/bin")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 
 # TODO: allow choosing static or dynamic libraries
@@ -82,8 +93,8 @@ set_target_properties(Gamma
 
 # Install target
 
-install(TARGETS Gamma DESTINATION lib)
-install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION include/Gamma)
+install(TARGETS Gamma DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
 
 # Run from path
 if((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
@@ -98,8 +109,8 @@ endif((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 if(BUILD_EXAMPLES)
   set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
   foreach(dir ${EXAMPLE_DIRS})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/bin/examples/${dir})
-    file(GLOB EXAMPLE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} examples/${dir}/*.cpp)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin/examples/${dir}")
+	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR} examples/${dir}/*.cpp")
     foreach(example ${EXAMPLE_FILES})
       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
       if (ALLOSYSTEM_BUILD)
