@@ -21,7 +21,9 @@ set(GAMMA_SRC src/arr.cpp
   src/scl.cpp
   src/Recorder.cpp
   src/Scheduler.cpp
-  src/SoundFile.cpp)
+  src/SoundFile.cpp
+
+  src/fftpack++.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
@@ -132,7 +134,9 @@ endif(BUILD_EXAMPLES)
 
 
 # Unit tests
-if(GAMMA_TEST)
-  add_executable(unitTests tests/unitTests.cpp)
-  target_link_libraries(unitTests Gamma portaudio sndfile ${PA_FRAMEWORKS})
-endif(GAMMA_TEST)
+enable_testing()
+
+add_executable(gammaUnitTests tests/unitTests.cpp)
+target_link_libraries(gammaUnitTests Gamma ${GAMMA_LINK_LIBRARIES})
+add_test(NAME gammaUnitTests
+	 COMMAND $<TARGET_FILE:gammaUnitTests> ${TEST_ARGS})
