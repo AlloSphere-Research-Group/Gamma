@@ -49,6 +49,388 @@ static bool startAudio(double sampleRate = 44100,
 	return io_.start();
 }
 
+// From Gamma/Access.h --------------------------------------------
+/// \ingroup SimpleGamma
+/// \copydoc gam::IndexMap
+class IndexMap: public gam::IndexMap<> {
+public:
+	IndexMap(int idxMax=1, const REAL& posMax=1.0)
+		: gam::IndexMap<REAL>(idxMax, posMax) {}
+};
+
+class Slice;
+
+// From Gamma/Allocator.h ----------------------------------------------------
+
+// class Allocator
+
+// From Gamma/Analysis.h ------------------------------------------------------
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::EnvFollow
+class EnvFollow: public gam::EnvFollow<REAL,REAL> {
+public:
+	EnvFollow(REAL freq=10)
+		: gam::EnvFollow<REAL>(freq) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Threshold
+class Threshold: public gam::Threshold<REAL,REAL> {
+public:
+	Threshold(REAL thresh, REAL freq=10)
+		: gam::Threshold<REAL>(thresh, freq) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::ZeroCross
+class ZeroCross: public gam::ZeroCross<REAL> {
+public:
+	ZeroCross(REAL prev = 0.0)
+		: gam::ZeroCross<REAL>(prev) {}
+};
+
+// class ZeroCrossingRate
+
+// From Gamma/AudioIO.h -------------------------------------------------
+
+/// \ingroup SimpleGamma
+typedef gam::AudioDevice AudioDevice;
+
+/// \ingroup SimpleGamma
+typedef gam::AudioIO AudioIO;
+
+/// \ingroup SimpleGamma
+typedef gam::AudioIOData AudioIOData;
+
+//class AudioCallback;
+
+// From Gamma/Config.h --------------------------------------------------
+
+// No classes there
+
+// From Gamma/Constants.h -----------------------------------------------
+
+// No classes there
+
+// From Gamma/Containers.h -----------------------------------------------
+
+// class ArrayBase
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Array
+class Array: public gam::Array<REAL> {
+public:
+    Array() : gam::Array<REAL>() {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::ArrayPow2
+class ArrayPow2: public gam::ArrayPow2<REAL> {
+public:
+    ArrayPow2() : gam::ArrayPow2<REAL>() {}
+};
+
+// From Gamma/Conversion.h ----------------------------------------------
+
+//class Twiddle
+
+
+// From Gamma/Delay.h -------------------------------------
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Delay
+class Delay: public gam::Delay<REAL, gam::ipl::Cubic  > {
+public:
+	Delay(REAL delay) :
+		gam::Delay<REAL, gam::ipl::Cubic >(delay) {}
+	Delay(REAL maxDelay, REAL delay) :
+		gam::Delay<REAL, gam::ipl::Cubic >(maxDelay, delay) {}
+};
+
+//class Multitap
+//class DelayShift
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Delay1
+class Delay1: public gam::Delay1<REAL> {
+public:
+	Delay1(REAL initialValue = 0.0) :
+		gam::Delay1<REAL>(initialValue) {}
+};
+
+//class Delay2
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Comb
+class Comb: public gam::Comb<REAL, gam::ipl::Cubic, REAL> {
+public:
+	Comb() :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>() {}
+	Comb(float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
+	Comb(float maxDelay, float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
+		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
+};
+
+// From Gamma/DFT.h ----------------------------------------------
+/// \ingroup SimpleGamma
+/// \copydoc gam::SlidingWindow
+class SlidingWindow: public gam::SlidingWindow<REAL> {
+public:
+	SlidingWindow(unsigned int winSize, unsigned int hopSize)
+		: gam::SlidingWindow<REAL>(winSize, hopSize) {}
+};
+
+using gam::SpectralType;
+
+// Class DFTBase
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::DFT
+class DFT: public gam::DFT<> {
+public:
+	DFT(unsigned int winSize, unsigned int padSize=0,
+		SpectralType specType=COMPLEX,
+		unsigned numAux=0)
+		: gam::DFT<>(winSize, padSize, specType, numAux) {}
+};
+
+using gam::WindowType;
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::STFT
+class STFT: public gam::STFT<> {
+public:
+	STFT(unsigned int winSize=1024, unsigned int hopSize=256, unsigned int padSize=0,
+		 WindowType winType = RECTANGLE,
+		 SpectralType specType = COMPLEX,
+		 unsigned numAux=0)
+		: gam::DFT<>(winSize, hopSize, padSize, winType, specType, numAux) {}
+};
+
+class SlidingDFT;
+
+// From Gamma/Effects.h ----------------------------------------
+
+//class AM
+//class Biquad3
+//class Burst
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Chirp
+class Chirp : public gam::Chirp<REAL> {
+public:
+	Chirp(REAL freq1=220, REAL freq2=0, REAL decay60=0.2)
+		: gam::Chirp<REAL>(freq1, freq2, decay60) {}
+};
+
+//class ChebyN
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Chorus
+class Chorus : public gam::Chorus<REAL> {
+public:
+	Chorus(float delay=0.0021, float depth=0.002, float freq=1, float ffd=0.9, float fbk=0.1)
+		: gam::Chorus<REAL>(delay, depth, freq, ffd, fbk) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::FreqShift
+class FreqShift : public gam::FreqShift<REAL> {
+public:
+	FreqShift(REAL shift = 1) : gam::FreqShift<REAL>(shift) {}
+};
+
+//class MonoSynth
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Pan
+class Pan: public gam::Pan<REAL> {
+public:
+	Pan(REAL pos = 0) : gam::Pan<REAL>(pos) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Pluck
+class Pluck: public gam::Pluck {
+public:
+	Pluck(REAL freq=440, REAL decay=0.99) : gam::Pluck(freq, decay) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Quantizer
+class Quantizer: public gam::Quantizer {
+public:
+	Quantizer(REAL freq=2000, REAL step=0) : gam::Quantizer(freq, step) {}
+};
+
+// From Gamma/Envelope.h -------------------------------------
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Curve
+class Curve : public gam::Curve<REAL, REAL> {
+public:
+	Curve() : gam::Curve<REAL, REAL>() {}
+	Curve(REAL length, REAL curve, REAL start= 1.0, REAL end= 0.0) :
+		gam::Curve<REAL, REAL>(length, curve, start, end)
+	{}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Env
+//class Env {
+//public:
+//	Env(int numSegments = N, REAL start = 0.0) :
+//		gam::Env<numSegments>(att, dec, sus, rel, amp, crv) {}
+//};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::ADSR
+class ADSR : public gam::ADSR<REAL, REAL> {
+public:
+	ADSR(REAL att = 0.01, REAL dec = 0.1, REAL sus = 0.7, REAL rel = 1.,
+		 REAL amp = 1.0, REAL crv = -4.0) :
+		gam::ADSR<REAL, REAL>(att, dec, sus, rel, amp, crv) {}
+};
+
+// class AD
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Decay
+class Decay : public gam::Decay<REAL> {
+public:
+	Decay(REAL decay = 1.0, REAL val = 1.0) :
+		gam::Decay<REAL>(decay, val)
+	{}
+};
+
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Gate
+class Gate : public gam::Gate<REAL> {
+public:
+	Gate(REAL closingDelay=0, REAL threshold=0.001) :
+		gam::Gate<REAL>(closingDelay, threshold)
+	{}
+};
+
+//class Seg;
+
+// class SegExp;
+
+// From Gamma/FFT.h ----------------------------------------------
+
+//class CFFT;
+//class RFFT;
+
+// From Gamma/File.h ----------------------------------------------
+
+//class File;
+
+// From Gamma/Filter.h --------------------------------------
+
+//class AllPass1
+//class Biquad
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::BlockDC
+class BlockDC: public gam::BlockDC<REAL, REAL> {
+public:
+	BlockDC(REAL width=35) :
+		gam::BlockDC<REAL, REAL>(width) {}
+};
+
+//class BlockNyq
+//class Filter2
+//class AllPass2
+//class Notch
+
+// TODO: Is res required in low pass, hi pass and all pass biquads here?
+/// \ingroup SimpleGamma
+/// A Second-order Low pass filter
+class LowPass: public gam::Biquad<REAL, REAL> {
+public:
+	LowPass(REAL frq = 1000.0, REAL res = 1.0) :
+		gam::Biquad<REAL, REAL>(frq, res, gam::LOW_PASS) {}
+
+};
+
+/// \ingroup SimpleGamma
+/// A Second-order High pass filter
+class HiPass: public gam::Biquad<REAL, REAL> {
+public:
+	HiPass(REAL frq = 1000.0, REAL res = 1.0) :
+		gam::Biquad<REAL, REAL>(frq, res, gam::HIGH_PASS) {}
+
+};
+
+/// \ingroup SimpleGamma
+/// A Second-order All pass filter
+class AllPass: public gam::Biquad<REAL, REAL> {
+public:
+	AllPass(REAL frq = 1000.0, REAL res = 1.0) :
+		gam::Biquad<REAL, REAL>(frq, res, gam::ALL_PASS) {}
+
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Reson
+class Reson: public gam::Reson<REAL, REAL> {
+public:
+	Reson(REAL frq = 1000.0, REAL width = 1.0) :
+		gam::Reson<REAL, REAL>(frq, width) {}
+
+};
+
+//class Hilbert
+//class Integrator
+//class MovingAvg
+//class OnePole
+
+// From Gamma/FormantData.h --------------------------------------
+
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::Vowel
+class Vowel: public gam::Vowel{
+public:
+	Vowel(REAL frq = 1000.0, REAL width = 1.0) :
+		gam::Reson<REAL, REAL>(frq, width) {}
+
+};
+
+// From Gamma/Node.h --------------------------------------
+
+//class Node2;
+//class Node3;
+
+// From Gamma/Noise.h ----------------------------------------
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoiseBrown
+class NoiseBrown: public gam::NoiseBrown<> {
+public:
+	NoiseBrown() : gam::NoiseBrown<>() {} // TODO: should seed from current time
+	NoiseBrown(uint32_t seed) : gam::NoiseBrown<>(seed) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoisePink
+class NoisePink: public gam::NoisePink<> {
+public:
+	NoisePink() : gam::NoisePink<>() {} // TODO: should seed from current time
+	NoisePink(uint32_t seed) : gam::NoisePink<>(seed) {}
+};
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::NoiseWhite
+class NoiseWhite: public gam::NoiseWhite<> {
+public:
+	NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
+	NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
+};
+
 
 // From Gamma/Oscillator.h ----------------------------------------------
 /// \ingroup SimpleGamma
@@ -122,221 +504,101 @@ public:
 
 //typedef gam::ImpulseFast ImpulseFast;
 
-// From Gamma/Delay.h -------------------------------------
+// From Gamma/Print.h ----------------------------------------------
+
+// No classes
+
+// From Gamma/Recorder.h ----------------------------------------------
 
 /// \ingroup SimpleGamma
-/// \copydoc gam::Delay
-class Delay: public gam::Delay<REAL, gam::ipl::Cubic  > {
+/// \copydoc gam::Recorder
+class Recorder: public gam::Recorder {
 public:
-	Delay(REAL delay) :
-		gam::Delay<REAL, gam::ipl::Cubic >(delay) {}
-	Delay(REAL maxDelay, REAL delay) :
-		gam::Delay<REAL, gam::ipl::Cubic >(maxDelay, delay) {}
+	Recorder(int channels, int frames=8192) : gam::Recorder(channels, frames) {}
 };
 
-//class Multitap
-//class DelayShift
+// From Gamma/SamplePlayer.h ----------------------------------------------
 
 /// \ingroup SimpleGamma
-/// \copydoc gam::Delay1
-class Delay1: public gam::Delay1<REAL> {
+/// \copydoc gam::SamplePlayer
+class SamplePlayer: public gam::SamplePlayer<REAL, gam::ipl::Cubic> {
 public:
-	Delay1(REAL initialValue = 0.0) :
-		gam::Delay1<REAL>(initialValue) {}
+	SamplePlayer() : gam::SamplePlayer() {}
+	SamplePlayer(Array<T>& src, double smpRate, double rate=1)
+		: gam::SamplePlayer(src, smpRate, rate) {}
+	explicit SamplePlayer(const char * pathToSoundFile, double rate=1)
+		: gam::SamplePlayer(pathToSoundFile, rate) {}
 };
 
-//class Delay1
 
 /// \ingroup SimpleGamma
-/// \copydoc gam::Comb
-class Comb: public gam::Comb<REAL, gam::ipl::Cubic, REAL> {
+/// \copydoc gam::SamplePlayer
+class SampleLooper: public gam::SamplePlayer<REAL, gam::ipl::Cubic, gam::phsInc::Loop > {
 public:
-	Comb() :
-		gam::Comb<REAL, gam::ipl::Cubic, REAL>() {}
-	Comb(float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
-		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
-	Comb(float maxDelay, float delay, const REAL& ffd = 0.0, const REAL& fbk = 0.0) :
-		gam::Comb<REAL, gam::ipl::Cubic, REAL>(delay, ffd, fbk) {}
+	SampleLooper() : gam::SamplePlayer() {}
+	SampleLooper(Array<T>& src, double smpRate, double rate=1)
+		: gam::SamplePlayer(src, smpRate, rate) {}
+	explicit SampleLooper(const char * pathToSoundFile, double rate=1)
+		: gam::SamplePlayer(pathToSoundFile, rate) {}
 };
 
-// From Gamma/Filter.h --------------------------------------
+// From Gamma/Sync.h ----------------------------------------------
+// Old header for compatibility, nothing useful here
 
-//class AllPass1
-//class Biquad
+
+// From Gamma/Scheduler.h ----------------------------------------------
+
+//class Func
+//using gam::SchedulerAudioIOData;
+// class ProcessNode
+// class Process
+//class ControlFunc
 
 /// \ingroup SimpleGamma
-/// \copydoc gam::BlockDC
-class BlockDC: public gam::BlockDC<REAL, REAL> {
+/// \copydoc gam::Scheduler
+class Scheduler: public gam::Scheduler {
 public:
-	BlockDC(REAL width=35) :
-		gam::BlockDC<REAL, REAL>(width) {}
+	Scheduler() : gam::Scheduler() {}
 };
 
-//class BlockNyq
-//class Filter2
-//class AllPass2
-//class Notch
+// From Gamma/Strategy.h ----------------------------------------------
 
-// TODO: Is res required in low pass, hi pass and all pass biquads here?
-/// \ingroup SimpleGamma
-/// A Second-order Low pass filter
-class LowPass: public gam::Biquad<REAL, REAL> {
-public:
-    LowPass(REAL frq = 1000.0, REAL res = 1.0) :
-        gam::Biquad<REAL, REAL>(frq, res, gam::LOW_PASS) {}
+// Interpolation strategies, probably not useful in SimpleGamma
 
-};
+// From Gamma/Thread.h ----------------------------------------------
 
-/// \ingroup SimpleGamma
-/// A Second-order High pass filter
-class HiPass: public gam::Biquad<REAL, REAL> {
-public:
-	HiPass(REAL frq = 1000.0, REAL res = 1.0) :
-		gam::Biquad<REAL, REAL>(frq, res, gam::HIGH_PASS) {}
+//class Thread;
 
-};
+// From Gamma/Timer.h ----------------------------------------------
+
+using gam::sleep;
+using gam::sleepSec;
+using gam::sleepUntil;
+using gam::timeNow;
+using gam::toSec;
+using gam::toNsec;
 
 /// \ingroup SimpleGamma
-/// A Second-order All pass filter
-class AllPass: public gam::Biquad<REAL, REAL> {
+/// \copydoc gam::Timer
+class Timer: public gam::Timer {
 public:
-	AllPass(REAL frq = 1000.0, REAL res = 1.0) :
-		gam::Biquad<REAL, REAL>(frq, res, gam::ALL_PASS) {}
-
+	Timer() : gam::Timer() {}
 };
 
-class Reson: public gam::Reson<REAL, REAL> {
-public:
-	Reson(REAL frq = 1000.0, REAL width = 1.0) :
-		gam::Reson<REAL, REAL>(frq, width) {}
+// From Gamma/Types.h ----------------------------------------------
 
-};
+//class Polar;
+//class Complex;
+//class Vec;
 
-//class Hilbert
-//class Integrator
-//class MovingAvg
-//class OnePole
+// From Gamma/UnitMaps.h ----------------------------------------------
 
-// From Gamma/Envelope.h -------------------------------------
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Curve
-class Curve : public gam::Curve<REAL, REAL> {
-public:
-	Curve() : gam::Curve<REAL, REAL>() {}
-	Curve(REAL length, REAL curve, REAL start= 1.0, REAL end= 0.0) :
-		gam::Curve<REAL, REAL>(length, curve, start, end)
-	{}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::ADSR
-class ADSR : public gam::ADSR<REAL, REAL> {
-public:
-	ADSR(REAL att = 0.01, REAL dec = 0.1, REAL sus = 0.7, REAL rel = 1.,
-		 REAL amp = 1.0, REAL crv = -4.0) :
-		gam::ADSR<REAL, REAL>(att, dec, sus, rel, amp, crv) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Env
-//class Env<N> : public gam::Env<N> {
-//public:
-//	Env(int numSegments = N, REAL start = 0.0) :
-//		gam::Env<numSegments>(att, dec, sus, rel, amp, crv) {}
-//};
-
-// From Gamma/Noise.h ----------------------------------------
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::NoiseBrown
-class NoiseBrown: public gam::NoiseBrown<> {
-public:
-	NoiseBrown() : gam::NoiseBrown<>() {} // TODO: should seed from current time
-	NoiseBrown(uint32_t seed) : gam::NoiseBrown<>(seed) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::NoisePink
-class NoisePink: public gam::NoisePink<> {
-public:
-	NoisePink() : gam::NoisePink<>() {} // TODO: should seed from current time
-	NoisePink(uint32_t seed) : gam::NoisePink<>(seed) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::NoiseWhite
-class NoiseWhite: public gam::NoiseWhite<> {
-public:
-    NoiseWhite() : gam::NoiseWhite<>() {} // TODO: should seed from current time
-    NoiseWhite(uint32_t seed) : gam::NoiseWhite<>(seed) {}
-};
-
-// From Gamma/Effects.h ----------------------------------------
-
-//class AM
-//class Biquad3
-//class Burst
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Chirp
-class Chirp : public gam::Chirp<REAL> {
-public:
-	Chirp(REAL freq1=220, REAL freq2=0, REAL decay60=0.2)
-		: gam::Chirp<REAL>(freq1, freq2, decay60) {}
-};
-
-//class ChebyN
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Chorus
-class Chorus : public gam::Chorus<REAL> {
-public:
-	Chorus(float delay=0.0021, float depth=0.002, float freq=1, float ffd=0.9, float fbk=0.1)
-		: gam::Chorus<REAL>(delay, depth, freq, ffd, fbk) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::FreqShift
-class FreqShift : public gam::FreqShift<REAL> {
-public:
-	FreqShift(REAL shift = 1) : gam::FreqShift<REAL>(shift) {}
-};
-
-//class MonoSynth
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Pan
-class Pan: public gam::Pan<REAL> {
-public:
-	Pan(REAL pos = 0) : gam::Pan<REAL>(pos) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Pluck
-class Pluck: public gam::Pluck {
-public:
-	Pluck(REAL freq=440, REAL decay=0.99) : gam::Pluck(freq, decay) {}
-};
-
-/// \ingroup SimpleGamma
-/// \copydoc gam::Quantizer
-class Quantizer: public gam::Quantizer {
-public:
-	Quantizer(REAL freq=2000, REAL step=0) : gam::Quantizer(freq, step) {}
-};
-
+//class LookupTable;
+//class TablePow2
+//class CSinTable
+//class UnitMapper;
 
 // Other classes ---------------------------------------------
-
-/// \ingroup SimpleGamma
-typedef gam::AudioDevice AudioDevice;
-
-/// \ingroup SimpleGamma
-typedef gam::AudioIO AudioIO;
-
-/// \ingroup SimpleGamma
-typedef gam::AudioIOData AudioIOData;
 
 namespace rnd {
 /// \ingroup SimpleGamma
