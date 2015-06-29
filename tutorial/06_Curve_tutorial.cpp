@@ -7,9 +7,10 @@
 
 #include "Gamma/SimpleGamma.h"
 using namespace gamd;
+using namespace std;
 
 //length, curve, end, start
-Curve curveShape(10, -1, 10.0, -10.0);
+Curve curveShape(10, -5, 10.0, -10.0);
 Curve env(44100,10.0, 1.0, 0.0);
 
 // Noise source
@@ -42,7 +43,8 @@ void audioCB(AudioIOData& io){
 }
 
 int main(){
-    if (!startAudio(audioCB)) {
+//	curveShape.set(10, -5, 10.0, -10.0); // Initialize curve shape
+	if (!startAudio(44100, audioCB)) {
         cout << "Error starting audio." << endl;
         return -1;
     }

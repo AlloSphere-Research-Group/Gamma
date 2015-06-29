@@ -9,6 +9,7 @@
 
 #include "Gamma/SimpleGamma.h"
 using namespace gamd;
+using namespace std;
 
 // Noise source
 NoiseWhite src;           

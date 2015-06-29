@@ -42,7 +42,7 @@ static bool startAudio(double sampleRate = 44100,
 					   void * userData = 0,
 					   int framesPerBuf=64,
 					   int outChannels = 2,
-					   int inChannels = 0)
+					   int inChannels = 2)
 {
 	static gam::AudioIO io_(framesPerBuf, sampleRate, callback, userData, outChannels, inChannels);
 	setGlobalSampleRate(io_.framesPerSecond());
@@ -52,7 +52,7 @@ static bool startAudio(double sampleRate = 44100,
 // From Gamma/Access.h --------------------------------------------
 /// \ingroup SimpleGamma
 /// \copydoc gam::IndexMap
-class IndexMap: public gam::IndexMap<> {
+class IndexMap: public gam::IndexMap<REAL> {
 public:
 	IndexMap(int idxMax=1, const REAL& posMax=1.0)
 		: gam::IndexMap<REAL>(idxMax, posMax) {}
@@ -71,12 +71,12 @@ class Slice;
 class EnvFollow: public gam::EnvFollow<REAL,REAL> {
 public:
 	EnvFollow(REAL freq=10)
-		: gam::EnvFollow<REAL>(freq) {}
+		: gam::EnvFollow<REAL,REAL>(freq) {}
 };
 
 /// \ingroup SimpleGamma
 /// \copydoc gam::Threshold
-class Threshold: public gam::Threshold<REAL,REAL> {
+class Threshold: public gam::Threshold<REAL> {
 public:
 	Threshold(REAL thresh, REAL freq=10)
 		: gam::Threshold<REAL>(thresh, freq) {}
@@ -129,6 +129,8 @@ public:
 class ArrayPow2: public gam::ArrayPow2<REAL> {
 public:
     ArrayPow2() : gam::ArrayPow2<REAL>() {}
+	explicit ArrayPow2(uint32_t size): gam::ArrayPow2<REAL>(size){}
+	ArrayPow2(uint32_t size, const REAL& initial): gam::ArrayPow2<REAL>(size, initial){}
 };
 
 // From Gamma/Conversion.h ----------------------------------------------
@@ -182,34 +184,48 @@ public:
 		: gam::SlidingWindow<REAL>(winSize, hopSize) {}
 };
 
-using gam::SpectralType;
-
 // Class DFTBase
+
+using gam::SpectralType;
+using gam::COMPLEX;	/**< Complex number */
+using gam::MAG_PHASE;	/**< Magnitude and phase */
+using gam::MAG_FREQ;	/**< Magnitude and frequency */
 
 /// \ingroup SimpleGamma
 /// \copydoc gam::DFT
-class DFT: public gam::DFT<> {
+class DFT: public gam::DFT {
 public:
 	DFT(unsigned int winSize, unsigned int padSize=0,
 		SpectralType specType=COMPLEX,
 		unsigned numAux=0)
-		: gam::DFT<>(winSize, padSize, specType, numAux) {}
+		: gam::DFT(winSize, padSize, specType, numAux) {}
 };
 
 using gam::WindowType;
+using gam::BARTLETT;			/**< Bartlett (Triangle) */
+using gam::BLACKMAN;			/**< Blackman */
+using gam::BLACKMAN_HARRIS;	/**< Blackman-Harris */
+using gam::BLACKMAN_NUTTALL;   /**< Blackman-Nuttall */
+using gam::FLATTOP;            /**< Flat-Top */
+using gam::HAMMING;			/**< Hamming */
+using gam::HANN;				/**< von Hann */
+using gam::NUTTALL;            /**< Nuttall */
+using gam::WELCH;				/**< Welch */
+using gam::NYQUIST;			/**< Nyquist */
+using gam::RECTANGLE;			/**< Rectangle (no window) */
 
 /// \ingroup SimpleGamma
 /// \copydoc gam::STFT
-class STFT: public gam::STFT<> {
+class STFT: public gam::STFT {
 public:
 	STFT(unsigned int winSize=1024, unsigned int hopSize=256, unsigned int padSize=0,
 		 WindowType winType = RECTANGLE,
 		 SpectralType specType = COMPLEX,
 		 unsigned numAux=0)
-		: gam::DFT<>(winSize, hopSize, padSize, winType, specType, numAux) {}
+		: gam::STFT(winSize, hopSize, padSize, winType, specType, numAux) {}
 };
 
-class SlidingDFT;
+//class SlidingDFT;
 
 // From Gamma/Effects.h ----------------------------------------
 
@@ -260,9 +276,9 @@ public:
 
 /// \ingroup SimpleGamma
 /// \copydoc gam::Quantizer
-class Quantizer: public gam::Quantizer {
+class Quantizer: public gam::Quantizer<REAL> {
 public:
-	Quantizer(REAL freq=2000, REAL step=0) : gam::Quantizer(freq, step) {}
+	Quantizer(REAL freq=2000, REAL step=0) : gam::Quantizer<REAL>(freq, step) {}
 };
 
 // From Gamma/Envelope.h -------------------------------------
@@ -394,10 +410,6 @@ public:
 /// \ingroup SimpleGamma
 /// \copydoc gam::Vowel
 class Vowel: public gam::Vowel{
-public:
-	Vowel(REAL frq = 1000.0, REAL width = 1.0) :
-		gam::Reson<REAL, REAL>(frq, width) {}
-
 };
 
 // From Gamma/Node.h --------------------------------------
@@ -523,11 +535,11 @@ public:
 /// \copydoc gam::SamplePlayer
 class SamplePlayer: public gam::SamplePlayer<REAL, gam::ipl::Cubic> {
 public:
-	SamplePlayer() : gam::SamplePlayer() {}
-	SamplePlayer(Array<T>& src, double smpRate, double rate=1)
-		: gam::SamplePlayer(src, smpRate, rate) {}
+	SamplePlayer() : gam::SamplePlayer<REAL, gam::ipl::Cubic>() {}
+	SamplePlayer(Array<REAL>& src, double smpRate, double rate=1)
+		: gam::SamplePlayer<REAL, gam::ipl::Cubic>(src, smpRate, rate) {}
 	explicit SamplePlayer(const char * pathToSoundFile, double rate=1)
-		: gam::SamplePlayer(pathToSoundFile, rate) {}
+		: gam::SamplePlayer<REAL, gam::ipl::Cubic>(pathToSoundFile, rate) {}
 };
 
 
@@ -535,11 +547,11 @@ public:
 /// \copydoc gam::SamplePlayer
 class SampleLooper: public gam::SamplePlayer<REAL, gam::ipl::Cubic, gam::phsInc::Loop > {
 public:
-	SampleLooper() : gam::SamplePlayer() {}
-	SampleLooper(Array<T>& src, double smpRate, double rate=1)
-		: gam::SamplePlayer(src, smpRate, rate) {}
+	SampleLooper() : gam::SamplePlayer<REAL, gam::ipl::Cubic, gam::phsInc::Loop >() {}
+	SampleLooper(Array<REAL>& src, double smpRate, double rate=1)
+		: gam::SamplePlayer<REAL, gam::ipl::Cubic, gam::phsInc::Loop >(src, smpRate, rate) {}
 	explicit SampleLooper(const char * pathToSoundFile, double rate=1)
-		: gam::SamplePlayer(pathToSoundFile, rate) {}
+		: gam::SamplePlayer<REAL, gam::ipl::Cubic, gam::phsInc::Loop >(pathToSoundFile, rate) {}
 };
 
 // From Gamma/Sync.h ----------------------------------------------
@@ -588,7 +600,7 @@ public:
 // From Gamma/Types.h ----------------------------------------------
 
 //class Polar;
-//class Complex;
+using gam::Complex;
 //class Vec;
 
 // From Gamma/UnitMaps.h ----------------------------------------------
@@ -603,16 +615,37 @@ public:
 namespace rnd {
 /// \ingroup SimpleGamma
 using gam::rnd::pick;
+/// \ingroup SimpleGamma
 using gam::rnd::uni;
 }
 
 namespace scl {
+/// \ingroup SimpleGamma
 using gam::scl::clip;
 }
 
 /// \ingroup SimpleGamma
 typedef gam::Domain Domain;
 }
+
+using gam::WaveformType;
+using gam::SINE;				/**< Sine wave */
+using gam::COSINE;				/**< Cosine wave */
+using gam::TRIANGLE;			/**< Triangle wave */
+using gam::PARABOLIC;			/**< Parabolic wave */
+using gam::SQUARE;				/**< Square wave */
+using gam::SAW;				/**< Saw wave */
+using gam::IMPULSE;				/**< Impulse wave */
+
+/// \ingroup SimpleGamma
+/// \copydoc gam::addWave
+using gam::addWave;
+/// \ingroup SimpleGamma
+/// \copydoc gam::addSine
+using gam::addSine;
+/// \ingroup SimpleGamma
+/// \copydoc gam::addSines
+using gam::addSines;
 
 
 #endif // SIMPLEGAMMA_H

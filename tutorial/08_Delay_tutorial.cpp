@@ -16,6 +16,8 @@ Accum tmr(0.5);// Timer to change the filter's center frequency
 
 double fundamentalFrequency = 200.0;
 
+// DSF (discrete summation formula) produces a finite sum of harmonics whose
+// amplitudes follow a geometric series
 DSF src(fundamentalFrequency, 1, 0.5, 8);
 
 Delay delay(1.1);
