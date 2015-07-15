@@ -96,7 +96,7 @@ set_target_properties(Gamma
 # Install target
 
 install(TARGETS Gamma DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
+install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION "${CMAKE_INSTALL_PREFIX}/include/Gamma")
 
 # Run from path
 if((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
