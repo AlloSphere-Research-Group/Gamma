@@ -396,8 +396,8 @@ public:
 	{}
 
 
-	//float operator()(){ return comb(fil(noise() * env())); }
-	//float operator()(float in){ return comb(fil(in * env())); }
+	float operator()(){ return comb(fil(noise() * env())); }
+	float operator()(float in){ return comb(fil(in * env())); }
 	void reset(){ env.reset(); }
 	void freq(float v){ comb.freq(v); }
 	
