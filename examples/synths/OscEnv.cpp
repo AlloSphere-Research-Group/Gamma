@@ -2,7 +2,10 @@
 
 */
 
-#include "examples.h"
+#include <stdio.h>				// for printing to stdout
+#define GAMMA_H_INC_ALL			// define this to include all header files
+#include "Gamma/Gamma.h"
+using namespace gam;
 
 class OscEnv : public Process<AudioIOData> {
 public:

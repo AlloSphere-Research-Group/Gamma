@@ -1,4 +1,4 @@
-/*	Gamma - Generic processing library
+﻿/*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information
 
 Example:	Sine Oscillator
