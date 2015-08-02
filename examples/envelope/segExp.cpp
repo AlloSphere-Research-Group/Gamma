@@ -6,37 +6,51 @@
 					amplitude of a noise source.
 */
 
-#include "../examples.h"
+#include "../AudioApp.h"
+#include "Gamma/Envelope.h"
+#include "Gamma/Noise.h"
+#include "Gamma/Oscillator.h"
+using namespace gam;
 
-Accum<> tmr(1);			// Timer for resetting envelope
-NoiseWhite<> src;		// Noise source
 
-SegExp<> env(	// Exponential envelope
-	1,			// Length
-	0.2,		// Curvature
-	0.2,0		// Start/end values
-);
+class MyApp : public AudioApp{
+public:
 
-float curvature = 10;
+	Accum<> tmr;			// Timer for resetting envelope
+	NoiseWhite<> src;		// Noise source
+	SegExp<> env;			// Exponential envelope
+	float curvature;
 
-void audioCB(AudioIOData& io){
+	MyApp() :	env(	1,			// Length
+						0.2,		// Curvature
+						0.2, 0		// Start/end values
+				){
 
-	while(io()){
-	
-		if(tmr()){
-			// reset envelope to beginning
-			env.reset();
-			
-			// set a new curvature value
-			if(--curvature < -10) curvature+=20;
-			env.curve(curvature);
-			printf("curvature = % g\n", curvature);
-		}
-
-		float s = src() * env();
-
-		io.out(0) = io.out(1) = s;
+		tmr.period(1);
+		curvature = 10;
 	}
-}
 
-RUN_AUDIO_MAIN
+	void onAudio(AudioIOData& io){
+
+		while (io()){
+
+			if (tmr()){
+				// reset envelope to beginning
+				env.reset();
+
+				// set a new curvature value
+				if (--curvature < -10) curvature += 20;
+				env.curve(curvature);
+				printf("curvature = % g\n", curvature);
+			}
+
+			float s = src() * env();
+
+			io.out(0) = io.out(1) = s;
+		}
+	}
+};
+
+int main(){
+	MyApp().start();
+}
