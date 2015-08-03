@@ -10,6 +10,9 @@ Gamma.build/
 Gamma.xcodeproj/
 cmake_install.cmake
 
+Gamma_VS2013/
+
+
 *~
 *.link
 *.a

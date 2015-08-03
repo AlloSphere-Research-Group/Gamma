@@ -292,9 +292,14 @@ public:
 	virtual ~STFT();
 
 
-	using DFT::operator();
+	//using DFT::operator();					// VS2013 error C3066
 	using DFT::sizeHop;
 
+	/// Returns next sample from inverse transform
+
+	/// The inverse transform is performed every sizeWin() samples.
+	///
+	float operator()();
 
 	/// Input next time-domain sample
 	
@@ -600,7 +605,9 @@ inline float DFT::operator()(){
 inline bool DFT::inverseOnNext(){ return mTapR == (sizeHop() - 1); }
 
 
-
+inline float STFT:: operator()() {
+	return DFT::operator()();
+}
 
 inline bool STFT::operator()(float input){
 	if(mSlide(bufFwdPos(), input)){

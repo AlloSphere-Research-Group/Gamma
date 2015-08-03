@@ -79,7 +79,9 @@ int main(int argc, char* argv[]){
 	#include "ut/utFilter.cpp"
 	#include "ut/utGenerators.cpp"
 
-//	printf("Unit testing succeeded.\n");
+	printf("Unit testing succeeded.\n\n");
+
+	printf("Press 'enter' to quit...\n"); getchar();
 
 	return 0;
 }

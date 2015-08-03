@@ -394,7 +394,8 @@ public:
 	Pluck(double freq=440, double decay=0.99)
 	:	env(0.1), fil(3000, 1, LOW_PASS), comb(1./27.5, 1./freq, 1, decay)
 	{}
-	
+
+
 	float operator()(){ return comb(fil(noise() * env())); }
 	float operator()(float in){ return comb(fil(in * env())); }
 	void reset(){ env.reset(); }

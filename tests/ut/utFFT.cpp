@@ -91,6 +91,7 @@
 		for(int i=0; i<N*4; ++i){
 			float p = float(i)/N * 2*M_PI;
 			float s = cos(p);
+
 			if(stft(s)){
 				//printf("\n");
 			}
