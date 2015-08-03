@@ -25,7 +25,10 @@ public:
 		sf.channels(2);
 		sf.frameRate(44100);
 		sf.path("recording.wav");
-		sf.openWrite();
+		if (!sf.openWrite()) {
+			printf("Error opening file for writing.\n");
+			exit(-1);
+		}
 
 		rec.resize(
 			2,		// number of channels
@@ -41,13 +44,16 @@ public:
 		// This will typically be done in a separate lower-priority thread, 
 		// definitely not here...
 		int i=200;
+		int samples = 0;
 		while(--i){
 			float * buf;
 			int n = rec.read(buf);
+			samples += n;
 			sf.write(buf, n);
 			//printf("consumed %d frames\n", n);
 			gam::sleepSec(0.01);
 		}
+		printf("Wrote %i samples to file.\n", samples);
 	}
 
 	void onAudio(gam::AudioIOData& io){
