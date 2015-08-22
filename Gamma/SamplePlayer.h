@@ -125,7 +125,7 @@ public:
 	double rate() const { return mRate; }	///< Get playback rate
 
 
-	virtual void onDomainChange(double r){ frameRate(mFrameRate); }
+	void onDomainChange(double r){ frameRate(mFrameRate); }
 
 protected:
 	Si<T> mIpol;
@@ -164,14 +164,12 @@ PRE CLS::SamplePlayer(SamplePlayer<T>& src, double rate)
 :	mPos(0), mInc(1), mRate(rate)
 {
 	buffer(src);
-	refreshDomain();
 }
 
 PRE CLS::SamplePlayer(Array<T>& src, double smpRate, double rate)
 :	mPos(0), mInc(1), mRate(rate)
 {
 	buffer(src, smpRate, 1);
-	refreshDomain();
 }
 
 

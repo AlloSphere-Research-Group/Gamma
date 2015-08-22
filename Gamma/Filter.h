@@ -67,20 +67,20 @@ class AllPass1 : public Td {
 public:
 	///
 	/// \param[in]	frq		Center frequency
-	AllPass1(Tp frq=1000);
+	AllPass1(Tp frq = Tp(1000));
 
 	void freq (Tp v);		///< Set cutoff frequency
 	void freqF(Tp v);		///< Faster, but slightly less accurate than freq()	
 	void zero(){ d1=Tv(0); }
 	
-	Tv operator()(Tv input);///< Filters sample
+	Tv operator()(Tv in);	///< Filters sample
 	
-	Tv high(Tv input);		///< High-pass filters sample
-	Tv low (Tv input);		///< Low-pass filters sample
+	Tv high(Tv in);			///< High-pass filters sample
+	Tv low (Tv in);			///< Low-pass filters sample
 	
 	Tp freq();				///< Get current cutoff frequency
 	
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 	
 protected:
 	Tv d1;		// once delayed value
@@ -135,14 +135,14 @@ public:
 	void type(FilterType type);			///< Set type of filter
 	void zero();						///< Zero internal delays
 
-	Tv operator()(Tv i0);				///< Filter next sample
-	Tv nextBP(Tv i0);					///< Optimized for band-pass types
+	Tv operator()(Tv in);				///< Filter next sample
+	Tv nextBP(Tv in);					///< Optimized for band-pass types
 	
 	Tp freq() const;					///< Get center frequency
 	Tp res() const;						///< Get resonance (Q)
 	FilterType type() const;			///< Get filter type
 	
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	Tp mA[3];			// feedforward coefs
@@ -170,14 +170,18 @@ template <class Tv=gam::real, class Tp=gam::real, class Td=DomainObserver>
 class BlockDC : public Td{
 public:
 
-	/// \param[in] width	Bandwidth of pole
-	BlockDC(Tp width=35): d1(0), mWidth(width){ Td::refreshDomain(); }
+	/// \param[in] bwidth	Bandwidth of pole
+	BlockDC(Tp bwidth = Tp(35))
+	:	d1(0), mWidth(bwidth)
+	{
+		onDomainChange(1);
+	}
 
 	/// Filter sample
-	Tv operator()(Tv i0){		
-		i0 += d1*mB1;
-		Tv o0 = i0-d1;
-		d1 = i0;
+	Tv operator()(Tv in){
+		Tv t = in + d1*mB1;
+		Tv o0 = t - d1;
+		d1 = t;
 		return o0;
 	}
 
@@ -189,7 +193,7 @@ public:
 
 	void zero(){ d1=0; }
 
-	virtual void onDomainChange(double r){ width(mWidth); }
+	void onDomainChange(double r){ width(mWidth); }
 
 protected:
 	Tv d1;
@@ -208,14 +212,16 @@ template <class Tv=gam::real, class Tp=gam::real, class Td=DomainObserver>
 class BlockNyq : public BlockDC<Tv,Tp,Td>{
 public:
 
-	/// \param[in] width	Bandwidth of pole
-	BlockNyq(Tp bwidth=35){ width(bwidth); }
+	/// \param[in] bwidth	Bandwidth of pole
+	BlockNyq(Tp bwidth = Tp(35)){
+		width(bwidth);
+	}
 
 	/// Filter sample
-	Tv operator()(Tv i0){		
-		i0 += d1*mB1;
-		Tv o0 = i0+d1;
-		d1 = i0;
+	Tv operator()(Tv in){
+		Tv t = in + d1*mB1;
+		Tv o0 = t + d1;
+		d1 = t;
 		return o0;
 	}
 
@@ -256,7 +262,7 @@ public:
 	/// Zero delay elements
 	void zero(){ d2=d1=Tv(0); }
 	
-	virtual void onDomainChange(double r){ freq(mFreq); width(mWidth); }
+	void onDomainChange(double r){ freq(mFreq); width(mWidth); }
 
 protected:
 
@@ -309,13 +315,14 @@ public:
 
 	/// \param[in] frq	Center frequency
 	/// \param[in] wid	Bandwidth
-	AllPass2(Tp frq=1000, Tp wid=100): Base(frq, wid){ Td::refreshDomain(); }
+	AllPass2(Tp frq = Tp(1000), Tp wid = Tp(100))
+	:	Base(frq, wid){}
 
 	/// Filter sample
-	Tv operator()(Tv i0){
-		i0 += d1*mC[1] + d2*mC[2];
-		Tv o0 = i0*-mC[2] - d1*mC[1] + d2;
-		this->delay(i0);
+	Tv operator()(Tv in){
+		Tv  t = in + d1*mC[1] + d2*mC[2];
+		Tv o0 = d2 - d1*mC[1] -  t*mC[2];
+		this->delay(t);
 		return o0;
 	}
 
@@ -337,7 +344,11 @@ public:
 	
 	/// \param[in] frq	Center frequency
 	/// \param[in] wid	Bandwidth
-	Notch(Tp frq=1000, Tp wid=100): Base(frq, wid){ Td::refreshDomain(); }
+	Notch(Tp frq = Tp(1000), Tp wid = Tp(100))
+	:	Base(frq, wid)
+	{
+		onDomainChange(1);
+	}
 
 	/// Set center frequency
 	void freq(Tp v){ Base::freq(v); computeGain(); }
@@ -346,14 +357,14 @@ public:
 	void width(Tp v){ Base::width(v); computeGain(); }
 
 	/// Filter sample
-	Tv operator()(Tv i0){
-		i0 *= gain();
-		Tv o0 = i0 - d1*mC[1] - d2*mC[2];
-		this->delay(i0);
+	Tv operator()(Tv in){
+		Tv t = in * gain();
+		Tv o0 = t - d1*mC[1] - d2*mC[2];
+		this->delay(t);
 		return o0;
 	}
 
-	virtual void onDomainChange(double r){ freq(mFreq); width(mWidth); }
+	void onDomainChange(double r){ freq(mFreq); width(mWidth); }
 
 protected:
 	INHERIT_FILTER2;
@@ -376,7 +387,11 @@ public:
 
 	/// \param[in] frq	Center frequency
 	/// \param[in] wid	Bandwidth	
-	Reson(Tp frq=440, Tp wid=100): Base(frq, wid){ Td::refreshDomain(); }
+	Reson(Tp frq = Tp(1000), Tp wid = Tp(100))
+	:	Base(frq, wid)
+	{
+		onDomainChange(1);
+	}
 
 	/// Set center frequency
 	void freq(Tp v){
@@ -391,11 +406,10 @@ public:
 	void set(Tp frq, Tp wid){ Base::width(wid); freq(frq); }
 
 	/// Filter sample
-	Tv operator()(Tv i0){
-		i0 *= gain();
-		i0 += d1*mC[1] + d2*mC[2];
-		this->delay(i0);
-		return i0;
+	Tv operator()(Tv in){
+		Tv t = in * gain() + d1*mC[1] + d2*mC[2];
+		this->delay(t);
+		return t;
 	}
 
 	void onDomainChange(double r){ freq(mFreq); width(mWidth); }
@@ -437,10 +451,10 @@ public:
 	#undef SR
 
 	/// Convert input from real to complex
-	Complex<Tv> operator()(const Tv& i){
+	Complex<Tv> operator()(Tv in){
 		return Complex<Tv>(
-			 cf0(cf1(cf2(cf3(cf4(cf5(i)))))),
-			-sf0(sf1(sf2(sf3(sf4(sf5(i))))))
+			 cf0(cf1(cf2(cf3(cf4(cf5(in)))))),
+			-sf0(sf1(sf2(sf3(sf4(sf5(in))))))
 		);
 	}
 
@@ -460,16 +474,18 @@ class Integrator{
 public:
 
 	/// \param[in] leakCoef		Leak coefficient, in [0,1)
-	/// \param[in] v			Initial value
-	Integrator(const Tp& leakCoef=Tp(1), const Tv& v=Tv(0)){
-		mo[0]=v;
+	/// \param[in] initVal		Initial value
+	Integrator(Tp leakCoef = Tp(1), Tv initVal = Tv(0)){
+		mo[0] = initVal;
 		leak(leakCoef);
 	}
 
 	/// Filter input value
-	Tv operator()(const Tv& i0) const { return mo[0]=mo[0]*mb[0] + i0; }
+	Tv operator()(Tv in) const {
+		return mo[0] = mo[0]*mb[0] + in;
+	}
 	
-	Integrator& leak(const Tp& v){ mb[0]=v; return *this; }
+	Integrator& leak(Tp v){ mb[0]=v; return *this; }
 	Integrator& zero(){ mo[0]=Tv(0); return *this; }
 
 protected:
@@ -502,8 +518,8 @@ public:
 
 	MovingAvg& operator=(const Tv& v){ DelayN<Tv>::operator=(v); return *this; }
 	
-	Tv operator()(const Tv& i0){
-		mSum += i0 - Base::operator()(i0);
+	Tv operator()(Tv in){
+		mSum += in - Base::operator()(in);
 		return mSum * mRSize;
 	}
 
@@ -533,11 +549,10 @@ protected:
 template<class Tv=gam::real, class Tp=gam::real, class Td=DomainObserver>
 class OnePole : public Td{ 
 public:
-	OnePole();
 
 	/// \param[in]	freq	Smoothing frequency
 	/// \param[in]	stored	Initial stored value
-	OnePole(Tp freq, const Tv& stored=0);
+	OnePole(Tp freq = Tp(1000), const Tv& stored = Tv(0));
 
 	const Tp& freq() const { return mFreq; }	///< Get cutoff frequency
 
@@ -553,13 +568,13 @@ public:
 
 	void smooth(Tp val);				///< Set smoothing coefficient directly
 	void zero(){ o1=0; }				///< Zero internal delay
-	void reset(const Tv& v){ o1=v; mStored=v; }
+	void reset(Tv v = Tv(0)){ o1=mStored=v; }
 
 	const Tv& operator()();				///< Returns filtered output using stored value
-	const Tv& operator()(const Tv& input);		///< Returns filtered output from input value
+	const Tv& operator()(Tv in);		///< Returns filtered output from input value
 
-	void operator  = (const Tv& val);	///< Stores input value for operator()
-	void operator *= (const Tv& val);	///< Multiplies stored value by value
+	void operator  = (Tv val);			///< Stores input value for operator()
+	void operator *= (Tv val);			///< Multiplies stored value by value
 
 	const Tv& last() const;				///< Returns last output
 	const Tv& stored() const;			///< Returns stored value
@@ -567,7 +582,7 @@ public:
 
 	bool zeroing(Tv eps=0.0001) const;	///< Returns whether the filter is outputting zeros
 	
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	FilterType mType;
@@ -585,7 +600,9 @@ protected:
 template <class Tv, class Tp, class Td>
 AllPass1<Tv,Tp,Td>::AllPass1(Tp frq)
 :	d1(Tv(0)), mFreq(frq)
-{	Td::refreshDomain(); }
+{
+	onDomainChange(1);
+}
 
 template <class Tv, class Tp, class Td>
 inline void AllPass1<Tv,Tp,Td>::freq(Tp v){
@@ -635,7 +652,7 @@ template <class Tv, class Tp, class Td>
 Biquad<Tv,Tp,Td>::Biquad(Tp frq, Tp res, FilterType type)
 :	d1(0), d2(0), mLevel(1)
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	set(frq, res, type);
 }
 
@@ -790,14 +807,11 @@ inline Tv Biquad<Tv,Tp,Td>::nextBP(Tv i0){
 
 //---- OnePole
 template <class Tv, class Tp, class Td>
-OnePole<Tv,Tp,Td>::OnePole()
-:	mType(LOW_PASS), mFreq(10), mStored(Tv(0)), o1(Tv(0))
-{	Td::refreshDomain(); }
-
-template <class Tv, class Tp, class Td>
 OnePole<Tv,Tp,Td>::OnePole(Tp frq, const Tv& stored)
 :	mType(LOW_PASS), mFreq(frq), mStored(stored), o1(stored)
-{	Td::refreshDomain(); }
+{
+	onDomainChange(1);
+}
 
 template <class Tv, class Tp, class Td>
 void OnePole<Tv,Tp,Td>::onDomainChange(double r){ freq(mFreq); }
@@ -870,13 +884,16 @@ template <class Tv, class Tp, class Td>
 inline const Tv& OnePole<Tv,Tp,Td>::operator()(){ return (*this)(mStored); }
     
 template <class Tv, class Tp, class Td>
-inline const Tv& OnePole<Tv,Tp,Td>::operator()(const Tv& i0){ o1 = o1*mB1 + i0*mA0; return o1; }
+inline const Tv& OnePole<Tv,Tp,Td>::operator()(Tv in){
+	o1 = o1*mB1 + in*mA0;
+	return o1;
+}
 
 template <class Tv, class Tp, class Td>
-inline void OnePole<Tv,Tp,Td>::operator  = (const Tv& v){ mStored  = v; }
+inline void OnePole<Tv,Tp,Td>::operator  = (Tv v){ mStored  = v; }
 
 template <class Tv, class Tp, class Td>
-inline void OnePole<Tv,Tp,Td>::operator *= (const Tv& v){ mStored *= v; }
+inline void OnePole<Tv,Tp,Td>::operator *= (Tv v){ mStored *= v; }
 
 template <class Tv, class Tp, class Td>
 inline const Tv& OnePole<Tv,Tp,Td>::last() const { return o1; }
@@ -888,6 +905,8 @@ template <class Tv, class Tp, class Td>
 inline Tv& OnePole<Tv,Tp,Td>::stored(){ return mStored; }
     
 template <class Tv, class Tp, class Td>
-inline bool OnePole<Tv,Tp,Td>::zeroing(Tv eps) const { return scl::abs(o1) < eps && mStored == Tv(0); }
+inline bool OnePole<Tv,Tp,Td>::zeroing(Tv eps) const {
+	return scl::abs(o1) < eps && mStored == Tv(0);
+}
 } // gam::
 #endif

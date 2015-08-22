@@ -89,7 +89,7 @@ public:
 	///		3	. . / /		7	. / / /		b	/ . / /		f	/ / / /			\endverbatim
 	bool seq(uint32_t pattern);
 
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 //protected:
 private:
@@ -163,7 +163,7 @@ public:
 	Tv phase() const ;		///< Get normalized phase in [0, 1)
 	Tv amp() const;			///< Get amplitude
 	
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 	void print(FILE * fp = stdout, const char * append = "\n");
 	
 protected:
@@ -308,7 +308,7 @@ public:
 	Tv decay() const {return mDcy60;}	///< Get decay length
 	Tv freq() const {return mFreq;}		///< Get frequency
 
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	Tv mAmp, mFreq, mDcy60;
@@ -386,7 +386,7 @@ public:
 	void set(Tv frq, Tv amp, Tv phs=0){ Base::set(frq*Td::ups(), phs, amp); }
 
 
-	virtual void onDomainChange(double ratio){ Base::freq(Base::freq()/ratio); }
+	void onDomainChange(double ratio){ Base::freq(Base::freq()/ratio); }
 
 private:
 	typedef gen::RSin<Tv> Base;
@@ -409,7 +409,7 @@ public:
 	SineRs(){}
 
 	/// \param[in]	num		Number of resonators
-	SineRs(unsigned num): Base(num){ Td::refreshDomain(); }
+	SineRs(unsigned num): Base(num){ onDomainChange(1); }
 
 	/// Generate next sum of all oscillators
 	Tv operator()(){
@@ -427,7 +427,7 @@ public:
 	}
 
 
-	virtual void onDomainChange(double ratio){
+	void onDomainChange(double ratio){
 		for(unsigned i=0; i<this->size(); ++i){
 			(*this)[i].onDomainChange(ratio);
 		}
@@ -489,7 +489,7 @@ public:
 		);
 	}
 
-	virtual void onDomainChange(double ratio){
+	void onDomainChange(double ratio){
 		Base::freq(Base::freq()/ratio);
 		//printf("%g\n", Base::decay());
 		//printf("%g %g %g\n", Base::decay(), ratio, ::pow(Base::decay(), 1./ratio));
@@ -523,7 +523,7 @@ public:
 
 	/// \param[in]	num		Number of resonators
 	SineDs(unsigned num): Base(num){
-		Td::refreshDomain(); 
+		onDomainChange(1);
 		for(unsigned i=0; i<num; ++i) set(i, 0,0,0);
 	}
 
@@ -550,7 +550,7 @@ public:
 	}
 
 
-	virtual void onDomainChange(double ratio){
+	void onDomainChange(double ratio){
 		for(unsigned i=0; i<this->size(); ++i){
 			(*this)[i].onDomainChange(ratio);
 		}
@@ -667,7 +667,7 @@ public:
 	float tri();			///< Triangle
 	float pulse();			///< Pulse
 
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 private:
 	typedef Accum<Sp,Td> Base;
@@ -711,7 +711,7 @@ public:
 	
 	Tv maxHarmonics() const;	///< Get number of harmonics below Nyquist based on current settings
 
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	Tv mAmp;			// amplitude normalization factor
@@ -747,8 +747,10 @@ public:
 	/// Set frequency
 	void freq(Tv v){ Base::freq(v); Base::harmonicsMax(); }
 
-	virtual void onDomainChange(double r){
-		Base::onDomainChange(r); freq(AccumPhase<Tv,Td>::freq()); }
+	void onDomainChange(double r){
+		Base::onDomainChange(r);
+		freq(AccumPhase<Tv,Td>::freq());
+	}
 
 	using Buzz<Tv,Td>::freq; // needed for getter
 
@@ -846,7 +848,7 @@ public:
 	Tv harmonics() const;		///< Get current number of harmonics
 	Tv maxHarmonics() const;	///< Get maximum number of harmonics for current settings
 	
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	typedef AccumPhase<Tv,Td> Base;
@@ -947,7 +949,7 @@ template<class St, class Td>
 Accum<St,Td>::Accum(float f, float p)
 :	mFreq(f), mFreqToInt(4294967296.), mFreqI(0)
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	phase(p);
 }
 
@@ -1044,7 +1046,7 @@ template<class Tv, class Td>
 AccumPhase<Tv, Td>::AccumPhase(Tv f, Tv p, Tv a)
 :	mInc(f), mAmp(a), mFreqToInc(1)
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	this->phase(p);
 }
 
@@ -1110,7 +1112,7 @@ template<class Tv, class Td> void AccumPhase<Tv, Td>::print(FILE * fp, const cha
 template<class Tv, class Td> CSine<Tv, Td>::CSine(Tv f, Tv a, Tv dcy60, Tv p)
 	: val(a, 0), mAmp(a), mFreq(f), mDcy60(dcy60)
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	this->phase(p);
 }
 

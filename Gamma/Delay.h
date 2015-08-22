@@ -67,9 +67,18 @@ public:
 
 	Tv operator()(const Tv& v);					///< Returns next filtered value
 	Tv operator()() const;						///< Reads delayed element from buffer
-	Tv read(float ago);							///< Returns element 'ago' units ago
+	Tv read(float ago) const;					///< Returns element 'ago' units ago
 	void write(const Tv& v);					///< Writes new element into buffer
-	
+
+	/// Copy delay elements to another array
+
+	/// \param[out] dst		array to copy element to
+	/// \param[ in] len		number of elements to copy
+	/// \param[ in] end		copy begins at (len+end) elements ago and
+	///							ends end elements ago
+	template <class V>
+	void read(V * dst, unsigned len, unsigned end=0) const;
+
 	float delay() const;						///< Get current delay length
 	uint32_t delaySamples() const;				///< Get current delay length in samples
 	float delaySamplesR() const;				///< Get current delay length in samples (real-valued)
@@ -80,7 +89,7 @@ public:
 	float maxDelay() const;						///< Get maximum delay length units
 
 	virtual void onResize();
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 	void print();
 
@@ -96,7 +105,7 @@ protected:
 
 	void incPhase();				// increment phase
 	void refreshDelayFactor();
-	uint32_t delayFToI(float v);	// convert f.p. delay to fixed-point
+	uint32_t delayFToI(float v) const; // convert f.p. delay to fixed-point
 };
 
 
@@ -321,12 +330,14 @@ protected:
 
 TM1 Delay<TM2>::Delay()
 :	DELAY_INIT
-{	Td::refreshDomain(); }
+{
+	onDomainChange(1);
+}
 
 TM1 Delay<TM2>::Delay(float maxDly, float dly)
 :	DELAY_INIT
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	maxDelay(maxDly, false);
 	this->zero();
 	delay(dly);
@@ -335,7 +346,7 @@ TM1 Delay<TM2>::Delay(float maxDly, float dly)
 TM1 Delay<TM2>::Delay(float dly)
 :	DELAY_INIT
 {	//printf("Delay::Delay(float)\n");
-	Td::refreshDomain();
+	onDomainChange(1);
 	maxDelay(dly, false);
 	this->zero();
 	delay(dly);
@@ -377,7 +388,7 @@ TM1 inline Tv Delay<TM2>::operator()(const Tv& i0){
 	return (*this)();*/
 }
 
-TM1 inline uint32_t Delay<TM2>::delayFToI(float v){
+TM1 inline uint32_t Delay<TM2>::delayFToI(float v) const {
 	return castIntRound((v * mDelayFactor) * 4294967296.);
 	//return scl::unitToUInt(v * mDelayFactor);
 }
@@ -404,8 +415,18 @@ TM1 void Delay<TM2>::onDomainChange(double r){ //printf("Delay::onDomainChange\n
 	delay(currDelay);
 }
 
-TM1 inline Tv Delay<TM2>::read(float ago){
+TM1 inline Tv Delay<TM2>::read(float ago) const {
 	return mIpol(*this, mPhase - delayFToI(ago));
+}
+
+TM1
+template <class V>
+void Delay<TM2>::read(V * dst, unsigned len, unsigned end) const {
+	unsigned mask = this->size()-1;
+	unsigned begin = this->index(mPhase) - (end + len);
+	for(unsigned i=0; i<len; ++i){
+		dst[i] = (*this)[(begin+i)&mask];
+	}
 }
 
 TM1 void Delay<TM2>::refreshDelayFactor(){ mDelayFactor = 1./maxDelay(); }

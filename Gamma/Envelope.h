@@ -428,10 +428,10 @@ public:
 	void reset(T amp=T(1));	///< Reset envelope and assign amplitude
 	void finish(T amp=T(0.001)); ///< Jump to end of envelope
 
+	void onDomainChange(double r);
+
 protected:
 	T mVal, mMul, mDcy;
-
-	virtual void onDomainChange(double r);
 };
 
 
@@ -503,7 +503,7 @@ public:
 		mFreq((Tp)1/len), mAcc(0, phase), mIpl(start)
 	{
 		mIpl.push(end);
-		Td::refreshDomain();
+		onDomainChange(1);
 	}
 
 
@@ -562,12 +562,12 @@ public:
 
 	Si<Tv>& ipol(){ return mIpl; }
 
+	void onDomainChange(double r){ freq(mFreq); }
+
 protected:
 	Tp mFreq;
 	gen::RAdd<Tp> mAcc;
 	Si<Tv> mIpl;
-	
-	virtual void onDomainChange(double r){ freq(mFreq); }
 };
 
 
@@ -587,7 +587,7 @@ public:
 	SegExp(T len, T crv=-3, T start=1, T end=0):
 		mLen(len), mCrv(crv), mVal1(start), mVal0(end)
 	{
-		Td::refreshDomain();
+		onDomainChange(1);
 	}
 	
 	/// Returns whether envelope is done
@@ -620,7 +620,7 @@ public:
 		mCurve.set(len * Td::spu(), crv);
 	}
 	
-	virtual void onDomainChange(double r){ set(mLen, mCrv); }
+	void onDomainChange(double r){ set(mLen, mCrv); }
 	
 protected:
 	T mLen, mCrv, mVal1, mVal0;
@@ -887,7 +887,7 @@ template <class T, class Td>
 Decay<T,Td>::Decay(T decay_, T val)
 :	mVal(val)
 {
-	Td::refreshDomain();
+	onDomainChange(1);
 	decay(decay_);
 }
 

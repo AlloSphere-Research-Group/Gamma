@@ -145,7 +145,7 @@ public:
 	void zeroAux();				///< Zeroes all auxiliary buffers
 	void zeroAux(unsigned num);	///< Zeroes an auxiliary buffer
 
-	virtual void onDomainChange(double r);
+	void onDomainChange(double r);
 
 protected:
 	unsigned mSizeDFT, mNumAux;
@@ -246,8 +246,8 @@ public:
 	void spctToRect();		// convert spectrum to rectangle format
 	void spctToPolar();		// convert spectrum to polar format
 
-	virtual void onDomainChange(double r);
-	virtual void print(FILE * fp=stdout, const char * append="\n");
+	void onDomainChange(double r);
+	void print(FILE * fp=stdout, const char * append="\n");
 	
 protected:
 	unsigned mSizeWin;				// samples in analysis window
@@ -346,7 +346,7 @@ public:
 	/// from certain transformations, like pitch shifting.
 	STFT& resetPhases();
 	
-	virtual void print(FILE * fp=stdout, const char * append="\n");	
+	void print(FILE * fp=stdout, const char * append="\n");	
 
 protected:
 	void computeInvWinMul();	// compute inverse normalization factor (due to overlap-add)
@@ -500,7 +500,7 @@ template<class T>
 DFTBase<T>::DFTBase()
 :	mSizeDFT(0), mNumAux(0), mBuf(0), mAux(0)
 {
-	refreshDomain();
+	onDomainChange(1);
 }
 
 template<class T>

@@ -21,7 +21,6 @@
 
 namespace gam{
 
-
 /// A single element array
 
 /// This array can be referenced by default to avoid a potential null pointer
@@ -33,16 +32,25 @@ T * defaultArray(){
 }
 
 
-///Size functor for ArrayPow2
+/// Size functor for ArrayPow2
     
 ///\ingroup Containers
 struct SizeArrayPow2{
 	SizeArrayPow2(uint32_t size){ (*this)(size); }
-	uint32_t operator()() const { return (1<<mBitsI) & 0xfffffffe/*avoids 1*/; }
-	void operator()(uint32_t v){ mBitsI = scl::log2(convert(v)); mBitsF = 32U - mBitsI; /*printf("%d %d\n", mBitsI, mBitsF);*/ }
-	static uint32_t convert(uint32_t v){ v=scl::ceilPow2(v); return v!=1 ? v : 2; }	// should return 0,2,4,8,16,...
-	uint32_t mBitsI;	// integer portion # bits
-	uint32_t mBitsF;	// fraction portion # bits
+
+	uint32_t operator()() const {
+		return (1<<mBitsI) & 0xfffffffe /*avoids 1*/;
+	}
+	void operator()(uint32_t v){
+		mBitsI = scl::log2(convert(v));
+		mBitsF = 32U - mBitsI; /*printf("%d %d\n", mBitsI, mBitsF);*/
+	}
+	static uint32_t convert(uint32_t v){
+		v=scl::ceilPow2(v);
+		return v!=1 ? v : 2; // should return 0,2,4,8,16,...
+	}
+	uint32_t mBitsI; // integer portion # bits
+	uint32_t mBitsF; // fraction portion # bits
 };
 
 
@@ -63,9 +71,11 @@ struct SizeArray{
 /// When the array is resized, if the elements are class-types, then their
 /// default constructors are called and if the elements are non-class-types,
 /// then they are left uninitialized.
-    
+///
+/// \tparam T	array element type
+/// \tparam S	size functor (\see SizeArrayPow2, SizeArray)
+/// \tparam A	memory allocator
 /// \ingroup Containers
-    
 template <class T, class S, class A=gam::Allocator<T> >
 class ArrayBase : private A{
 public:
@@ -231,7 +241,12 @@ private: ArrayPow2& operator=(const ArrayPow2& v);
 
 
 /// Ring buffer
-    
+
+/// This is a circular buffer that permits sequential writing and reading of
+/// elements in an array up to some number of past elements.
+///
+/// \tparam T	array element type
+/// \tparam A	memory allocator
 /// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 class Ring : public Array<T,A> {
@@ -255,11 +270,13 @@ public:
 	T& read(uint32_t ago){ return (*this)[indexPrev(ago)]; }
 	const T& read(uint32_t ago) const { return (*this)[indexPrev(ago)]; }
 
-	/// Copies len elements starting from element pos() - delay into dst.
-	void copy(T * dst, uint32_t len, uint32_t delay) const;
-	
-	/// Copy elements starting from last in into dst unwrapping from ring
-	void copyUnwrap(T * dst, uint32_t len) const;
+	/// Copies elements out of ring to another array
+
+	/// \param[out] dst		array to copy elements to
+	/// \param[ in] len		number of elements to copy
+	/// \param[ in] delay	how many elements ago to begin copy;
+	///						if delay<0, then delay -> size() + delay
+	void read(T * dst, uint32_t len, int32_t delay=-1) const;
 	
 	uint32_t pos() const;			///< Return absolute index of frontmost (newest) element
 	bool reachedEnd() const;		///< Returns whether the last element written was at the end of the array
@@ -283,6 +300,10 @@ protected:
 
 /// This is a two-part buffer consisting of a ring buffer for writing and
 /// a standard (absolute indexed) array for reading.
+///
+/// \tparam T	array element type
+/// \tparam A	memory allocator
+/// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 class DoubleRing : public Ring<T,A>{
 public:
@@ -299,7 +320,10 @@ public:
 	
 	/// \returns a pointer to the read buffer
 	///
-	T * copyUnwrap(){ Ring<T,A>::copyUnwrap(mRead.elems(), mRead.size()); return mRead.elems(); }
+	T * read(){
+		Ring<T,A>::read(mRead.elems(), mRead.size());
+		return mRead.elems();
+	}
 	
 	/// Copy elements into read buffer "as is" from ring
 	
@@ -320,8 +344,12 @@ protected:
 
 
 
-/// N-sample delay
+/// N-element delay
 
+/// Specialized Ring that provides a simple N-element delay.
+///
+/// \tparam T	array element type
+/// \tparam A	memory allocator
 /// \ingroup Containers
 template <class T, class A=gam::Allocator<T> >
 struct DelayN: public Ring<T,A>{
@@ -345,13 +373,9 @@ struct DelayN: public Ring<T,A>{
 
 
 
-
-
-
 // Implementation_______________________________________________________________
 
-
-// ArrayBase
+//---- ArrayBase
 
 #define ARRAYBASE_INIT mElems(0), mSize(0)
 
@@ -526,7 +550,8 @@ void ArrayBase<T,S,A>::source(T * src, uint32_t size){
 	onResize();
 }
 
-// ArrayPow2
+
+//---- ArrayPow2
 
 template<class T, class A>
 inline uint32_t ArrayPow2<T,A>::oneIndex() const { return 1<<fracBits(); }
@@ -552,7 +577,6 @@ inline float ArrayPow2<T,A>::fraction(uint32_t phase) const{
 }
 
 
-
 //---- Ring
 
 template<class T, class A>
@@ -565,21 +589,21 @@ inline void Ring<T,A>::operator()(const T& v){
 }
 
 template<class T, class A>
-void Ring<T,A>::copy(T * dst, uint32_t len, uint32_t delay) const{
+void Ring<T,A>::read(T * dst, uint32_t len, int32_t delay) const{
+
+	if(delay < 0) delay += int32_t(size());
+
 	// pos() points to most recently written slot
-	//uint32_t tap = (pos() - delay) % size();
-	uint32_t tap = (uint32_t)scl::wrap((int32_t)pos() - (int32_t)delay, (int32_t)size());
+	//uint32_t begin = (pos() - delay) % size();
+	uint32_t begin = (uint32_t)scl::wrap(int32_t(pos()) - delay, int32_t(size()));
 
 	// this ensures that we don't copy across the ring tap boundary
 	// we add one to maxLen because of a fence post anomaly
-	uint32_t maxLen = (tap < pos() ? (pos() - tap) : (pos() + (size() - tap))) + 1;
+	uint32_t maxLen = (begin < pos() ? (pos() - begin) : (pos() + (size() - begin))) + 1;
 	len = scl::min(len, maxLen);
 	
-	mem::copyFromRing(elems(), size(), tap, dst, len);
+	mem::copyFromRing(elems(), size(), begin, dst, len);
 }
-
-template<class T, class A>
-void Ring<T,A>::copyUnwrap(T * dst, uint32_t len) const { copy(dst, len, size() - 1); }
 
 template<class T, class A>
 inline uint32_t Ring<T,A>::indexBack() const {
