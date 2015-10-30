@@ -32,6 +32,10 @@ add_executable(${APP_NAME} EXCLUDE_FROM_ALL ${GAMMA_APP_SRC})
 #    LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
 #endif(APPLE)
 
+if(EXISTS "${SOURCE_DIR}/flags.cmake")
+    include("${SOURCE_DIR}/flags.cmake")
+endif()
+
 
 if(EXISTS "${SOURCE_DIR}/flags.txt")
   file(READ "${SOURCE_DIR}/flags.txt" EXTRA_COMPILER_FLAGS)
