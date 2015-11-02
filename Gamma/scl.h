@@ -9,21 +9,21 @@
 */
 
 // Define some standard C99 functions that Windows is too stubborn to support.
-#if GAM_WINDOWS
-	// MS puts nextafter here instead of in math.h. Also, we must include
-	// float.h before math.h to avoid a problem with MinGW.
-	#include <float.h>
-	// Undefine macros in windows.h
-	#ifdef max
-	#undef max
-	#endif
-	#ifdef min
-	#undef min
-	#endif
-	float nextafterf(float x, float y); // Defined in scl.cpp
-	#define nextafter(x,y)	_nextafter(x,y)
-	#define nextafterl(x,y)	_nextafter(x,y)
-#endif
+// #if GAM_WINDOWS
+// 	// MS puts nextafter here instead of in math.h. Also, we must include
+// 	// float.h before math.h to avoid a problem with MinGW.
+// 	#include <float.h>
+// 	// Undefine macros in windows.h
+// 	#ifdef max
+// 	#undef max
+// 	#endif
+// 	#ifdef min
+// 	#undef min
+// 	#endif
+// 	float nextafterf(float x, float y); // Defined in scl.cpp
+// 	#define nextafter(x,y)	_nextafter(x,y)
+// 	#define nextafterl(x,y)	_nextafter(x,y)
+// #endif
 
 #include <math.h>
 #include <stdlib.h>				/* labs(long) */

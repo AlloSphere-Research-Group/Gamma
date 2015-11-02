@@ -132,7 +132,8 @@ struct ThreadExFunctor{
 	Thread::Function func;
 	void * userData;
 
-	static unsigned __stdcall call(void * user){
+	// static unsigned __stdcall call(void * user){
+	static unsigned call(void * user){
 		ThreadExFunctor *pF
 			= reinterpret_cast<ThreadExFunctor*>(user);
 		(*(pF->func))(pF->userData);
