@@ -3,6 +3,23 @@ project(Gamma)
 
 message(STATUS "==== Configuring Gamma.")
 
+# C++11 is required for Gamma
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+
+
+if(NOT (COMPILER_SUPPORTS_CXX11 OR COMPILER_SUPPORTS_CXX0X))
+	message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
+if(COMPILER_SUPPORTS_CXX11)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
+elseif(COMPILER_SUPPORTS_CXX0X)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+endif()
+
+
 if(NOT DEFINED BUILD_ROOT_DIR)
   set(BUILD_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 endif(NOT DEFINED BUILD_ROOT_DIR)
@@ -43,7 +60,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 # TODO: allow choosing static or dynamic libraries
 
 if(USE_CPP_11)
-  message(STATUS "Using c++11..")
+  message(STATUS "Using c++11.")
   if(USE_LIB_CPP)
     message(STATUS "Using libc++..")
     set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
@@ -112,7 +129,7 @@ if(BUILD_EXAMPLES)
   set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
   foreach(dir ${EXAMPLE_DIRS})
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin/examples/${dir}")
-	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR} examples/${dir}/*.cpp")
+	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "examples/${dir}/*.cpp")
     foreach(example ${EXAMPLE_FILES})
       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
       if (ALLOSYSTEM_BUILD)
