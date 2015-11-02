@@ -14,7 +14,11 @@ if(NOT (COMPILER_SUPPORTS_CXX11 OR COMPILER_SUPPORTS_CXX0X))
 endif()
 
 if(COMPILER_SUPPORTS_CXX11)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
+  if(USE_LIB_CPP)
+    message(STATUS "Using libc++..")
+    set(CMAKE_CXX_FLAGS ""${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  endif(USE_LIB_CPP)
 elseif(COMPILER_SUPPORTS_CXX0X)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
@@ -59,15 +63,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 
 # TODO: allow choosing static or dynamic libraries
 
-if(USE_CPP_11)
-  message(STATUS "Using c++11.")
-  if(USE_LIB_CPP)
-    message(STATUS "Using libc++..")
-    set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
-  else(USE_LIB_CPP)
-    set(CMAKE_CXX_FLAGS "-std=c++11")
-  endif(USE_LIB_CPP)
-endif(USE_CPP_11)
 
 # Dependencies
 
