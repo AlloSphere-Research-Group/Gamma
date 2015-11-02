@@ -201,6 +201,9 @@ public:
 	template <unsigned N2, class T2>
 	Vec(const Vec<N2, T2>& v){ set(v); }
 
+	template <class Tv, class Ts>
+	Vec(const Vec<N-1, Tv>& v, Ts s){ set(v,s);}
+
 
     /// Returns size of vector
     static unsigned size(){ return N; }
@@ -227,7 +230,7 @@ public:
 		return Vec<4,T>((*this)[i0], (*this)[i1], (*this)[i2], (*this)[i3]); }
 
 
-	#define IT(n) for(unsigned i=0; i<n; ++i)
+	#define IT(n) for(unsigned i=0; i<(n); ++i)
 
 	bool operator !=(const Vec& v){ IT(N){ if((*this)[i] == v[i]) return false; } return true; }
 	bool operator !=(const T& v){ IT(N){ if((*this)[i] == v   ) return false; } return true; }
@@ -269,8 +272,11 @@ public:
 		return Vec().setIdentity();
 	}
 
-	template <int N2, class T2>
-	Vec& set(const Vec<N2, T2> &v){ IT(N<N2?N:N2){ (*this)[i] = T(v[i]); } return *this; }
+	template <unsigned N2, class T2>
+	Vec& set(const Vec<N2, T2>& v){ IT(N<N2?N:N2){ (*this)[i] = T(v[i]); } return *this; }
+
+	template <class Tv, class Ts>
+	Vec& set(const Vec<N-1, Tv>& v, Ts s){ (*this)[N-1]=s; return set(v); }
 
 	/// Set all elements to the same value
 	Vec& set(const T& v){ return (*this = v); }

@@ -8,15 +8,11 @@
 	This file defines some commonly needed scalar functions.
 */
 
-#include <math.h>
-#include <stdlib.h>				/* labs(long) */
-#include "Gamma/Config.h"
-#include "Gamma/Conversion.h"
-
-
 // Define some standard C99 functions that Windows is too stubborn to support.
 #if GAM_WINDOWS
-	#include <float.h> /* _nextafter */
+	// MS puts nextafter here instead of in math.h. Also, we must include
+	// float.h before math.h to avoid a problem with MinGW.
+	#include <float.h>
 	// Undefine macros in windows.h
 	#ifdef max
 	#undef max
@@ -25,10 +21,14 @@
 	#undef min
 	#endif
 	float nextafterf(float x, float y); // Defined in scl.cpp
-	//#define nextafterf(x,y)	_nextafterf(x,y)
 	#define nextafter(x,y)	_nextafter(x,y)
 	#define nextafterl(x,y)	_nextafter(x,y)
 #endif
+
+#include <math.h>
+#include <stdlib.h>				/* labs(long) */
+#include "Gamma/Config.h"
+#include "Gamma/Conversion.h"
 
 
 namespace gam{
@@ -122,6 +122,14 @@ inline T dBToAmp(const T& db){ return ::pow(10, db/20.); }
 /// Convert amplitude to decibels
 template <class T>
 inline T ampTodB(const T& amp){ return 20*::log(amp); }
+
+/// Returns an equal-loudness amplitude for a given frequency, in Hz.
+
+/// The curve used is an A-weighting curve which approximates a 40-phon equal
+/// loudness Fletcher-Munson contour.
+/// \param[in] freq		frequency, in Hz
+/// \param[in] maxAmp	maximum amplitude to clamp return value to
+double eqLoudAmp(double freq, double maxAmp=4.);
 
 /// Returns weights for linear fade.
 template<class T> void fadeLin(T& weight1, T& weight2, T fade);
@@ -221,6 +229,7 @@ template<class T> T nextAfter(T x, T y);
 template<class T> T pow2(T v);			///< Returns value to the 2nd power
 template<class T> T pow3(T v);			///< Returns value to the 3rd power
 template<class T> T pow4(T v);			///< Returns value to the 4th power
+template<class T> T pow5(T v);			///< Returns value to the 5th power
 template<class T> T pow8(T v);			///< Returns value to the 8th power
 
 /// Returns pole radius given a T60 decay length and units/sample
@@ -329,14 +338,14 @@ template<class T> T smoothZero(T v, T bw);
 /// Approximate square root using log base-2 and Newton methods.
 
 /// 'N' determines the accuracy of the approximation. For N=0, a quick and dirty
-/// log base-2 approximation is performed. For N>0, N-1 Newton iterations
+/// log base-2 approximation is performed. For N>0, N Newton iterations
 /// are applied to improve the result.
 template<unsigned N, class T> T sqrt(T v);
 
 /// Approximate inverse square root using log base-2 and Newton methods.
 
 /// 'N' determines the accuracy of the approximation. For N=0, a quick and dirty
-/// log base-2 approximation is performed. For N>0, N-1 Newton iterations
+/// log base-2 approximation is performed. For N>0, N Newton iterations
 /// are applied to improve the result.
 template<unsigned N, class T> T invSqrt(T v);
 
@@ -660,10 +669,11 @@ inline double nextAfter(double x, double y){ return nextafter(x,y); }
 template<>
 inline long double nextAfter(long double x, long double y){ return nextafterl(x,y); }
 
-template<class T> inline T pow2 (T v){ return v*v; }
-template<class T> inline T pow3 (T v){ return v*v*v; }
-template<class T> inline T pow4 (T v){ return pow2(pow2(v)); }
-template<class T> inline T pow8 (T v){ return pow2(pow2(pow2(v))); }
+template<class T> inline T pow2(T v){ return v*v; }
+template<class T> inline T pow3(T v){ return v*v*v; }
+template<class T> inline T pow4(T v){ return pow2(v*v); }
+template<class T> inline T pow5(T v){ return pow4(v)*v; }
+template<class T> inline T pow8(T v){ return pow4(v*v); }
 
 inline double ratioET(double pc, double divs, double ival){
 	return ::pow(ival, pc/divs);
@@ -1058,7 +1068,7 @@ inline float pulse(uint32_t p, uint32_t w){
 }
 
 inline float pulseU(uint32_t p, uint32_t w){	
-	return p > w ? 0.f : 1.f;
+	return p < w ? 1.f : 0.f;
 }
 
 // [1, 0.5, 0, -0.5]

@@ -13,7 +13,6 @@ change in spectral flux).
 #include "../AudioApp.h"
 #include "Gamma/DFT.h"
 #include "Gamma/SamplePlayer.h"
-#include "Gamma/Oscillator.h"
 using namespace gam;
 
 class MyApp : public AudioApp{
@@ -21,7 +20,6 @@ public:
 
 	STFT stft;
 	SamplePlayer<> play;
-	Sine<> sine;
 
 	MyApp()
 		// STFT(winSize, hopSize, padSize, winType, sampType, auxBufs)
@@ -32,10 +30,10 @@ public:
 	}
 
 	void onAudio(AudioIOData& io){
+		float pshift = 1.7831; //pshift = 1./pshift;
 
 		while(io()){
 			float s = play(); play.loop();
-			float pshift = sine() * 0.5 + 1.0;
 
 			if(stft(s)){
 		

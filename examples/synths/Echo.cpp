@@ -4,10 +4,7 @@
     By Professor Phil Conrad 
 */
 
-#include <stdio.h>				// for printing to stdout
-#define GAMMA_H_INC_ALL			// define this to include all header files
-#include "Gamma/Gamma.h"
-using namespace gam;
+#include "examples.h"
 
 int globalCounter = 0;
 
