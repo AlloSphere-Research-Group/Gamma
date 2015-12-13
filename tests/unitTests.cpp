@@ -81,7 +81,7 @@ int main(int argc, char* argv[]){
 
 	printf("Unit testing succeeded.\n\n");
 
-	printf("Press 'enter' to quit...\n"); getchar();
+//	printf("Press 'enter' to quit...\n"); getchar();
 
 	return 0;
 }
