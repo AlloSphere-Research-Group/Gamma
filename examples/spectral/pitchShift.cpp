@@ -12,6 +12,7 @@ change in spectral flux).
 */
 #include "../AudioApp.h"
 #include "Gamma/DFT.h"
+#include "Gamma/Oscillator.h"
 #include "Gamma/SamplePlayer.h"
 using namespace gam;
 
@@ -20,6 +21,7 @@ public:
 
 	STFT stft;
 	SamplePlayer<> play;
+	Sine<> sine;
 
 	MyApp()
 		// STFT(winSize, hopSize, padSize, winType, sampType, auxBufs)
