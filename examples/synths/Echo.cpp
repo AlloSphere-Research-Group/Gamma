@@ -4,14 +4,17 @@
     By Professor Phil Conrad 
 */
 
-#include "examples.h"
+#include <stdio.h>				// for printing to stdout
+#define GAMMA_H_INC_ALL			// define this to include all header files
+#include "Gamma/Gamma.h"
+using namespace gam;
 
 int globalCounter = 0;
 
 
-struct Echo : public Process<AudioIOData>{
-  Echo(): echo(0.4, 0.323, 0, 0.8){}
-  //Echo(const Process& p): Process(p), echo(0.4, 0.323, 0, 0.8){}
+struct Echo1 : public Process<AudioIOData> {
+  Echo1(): echo(0.4, 0.323, 0, 0.8){}
+  //Echo1(const Process& p): Process(p), echo(0.4, 0.323, 0, 0.8){}
 	
 	void onProcess(AudioIOData& io){
     while(io()){
@@ -116,11 +119,11 @@ int main(){
 	Scheduler s;
 
 	ProcessNode& effects = s.add<ProcessNode>(); // add effects group
-	//s.add<Echo>(effects); // add Echo to effects
+	//s.add<Echo1>(effects); // add Echo1 to effects
 	//s.add<Chorus1>(effects); // add chorus to effects
 
 	s.add<Chorus1>(effects); // add chorus to effects
-	s.add<Echo>(effects); // add Echo to effects
+	s.add<Echo1>(effects); // add Echo to effects
 
 	double attack = 0.1;
 	double decay = 0.1;
