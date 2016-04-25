@@ -287,7 +287,7 @@ public:
 
 	/// \param[in] frq		Frequency
 	/// \param[in] amp		Amplitude
-	/// \param[in] dcy		-60 dB decay length, in units (or negative for no decay)
+	/// \param[in] dcy		-60 dB decay length (negative for no decay)
 	/// \param[in] phs		Phase in [0, 1)
 	CSine(Tv frq=440, Tv amp=1, Tv dcy=-1, Tv phs=0);
 
@@ -296,11 +296,11 @@ public:
 
 	complex operator()();		///< Generate next sample
 
-	void amp(Tv val);			///< Set amplitude
-	void decay(Tv val);			///< Set -60 dB decay length, in units (or negative for no decay)
-	void freq(Tv val);			///< Set frequency
-	void freq(const complex& val){ mInc=val; }
-	void phase(Tv radians);		///< Set phase
+	void amp(Tv v);				///< Set amplitude
+	void decay(Tv v);			///< Set -60 dB decay length (negative for no decay)
+	void freq(Tv v);			///< Set frequency
+	void freq(complex v){ mInc=v; }
+	void phase(Tv v);			///< Set unit phase, in [0,1]
 	void reset();				///< Reset amplitude and set phase to 0
 	void set(Tv frq, Tv phs, Tv amp, Tv dcy);
 
@@ -580,7 +580,7 @@ public:
 	/// \param[in] frq		Frequency
 	/// \param[in] phase	Phase in [0, 1)
 	/// \param[in] mod		Modifier amount in [0, 1)
-	LFO(float frq, float phase=0, float mod=0.5);
+	LFO(double frq, double phase=0, double mod=0.5);
 
 
 	/// Set frequency, phase and modifier amount
@@ -601,6 +601,7 @@ public:
 	float line2();		///< 2-segment line. mod changes wave from down to tri to up
 	float para();		///< Parabolic wave (triangle wave with all harmonics)
 	float pulse();		///< Pulse (up + down). 'mod' controls pulse width
+	float pulseRange(); ///< Pulse (up + down). 'mod' controls pulse width. amplitude doesn't change with mod.
 	float sinPara();	///< Sine-like wave constructed from parabolas (odd harmonics)
 	float stair();		///< Stair (square + square). 'mod' controls pulse width
 	float sqr();		///< Square (-1 to 1)
@@ -1088,8 +1089,12 @@ template<class Tv, class Td> inline Tv AccumPhase<Tv, Td>::nextPhase(Tv frqMod){
 }
 
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freq(Tv v){ mInc = mapFreq(v); }
-template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqAdd(Tv v){ nextPhaseUsing(mapFreq(v)); }
-template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqMul(Tv v){ nextPhaseUsing(mapFreq(v*mInc)); }
+template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqAdd(Tv v){
+	nextPhaseUsing(mapFreq(v));
+}
+template<class Tv, class Td> inline void AccumPhase<Tv, Td>::freqMul(Tv v){
+	nextPhaseUsing((v-Tv(1))*mInc);
+}
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::period(Tv v){ freq(Tv(1)/v); }
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::phase(Tv v){ mPhase = mapPhase(v); }
 template<class Tv, class Td> inline void AccumPhase<Tv, Td>::phaseAdd(Tv v){ mPhase += mapPhase(v); }
@@ -1182,7 +1187,7 @@ template<class Tv, class Td> void CSine<Tv, Td>::onDomainChange(double r){
 //---- LFO
 #define TLFO LFO<Sp,Td>
 template<class Sp, class Td> TLFO::LFO(): Base(){ mod(0.5); }
-template<class Sp, class Td> TLFO::LFO(float f, float p, float m): Base(f, p){ mod(m); }
+template<class Sp, class Td> TLFO::LFO(double f, double p, double m): Base(f, p){ mod(m); }
 
 template<class Sp, class Td> inline TLFO& TLFO::set(float f, float p, float m){
 	this->freq(f);
@@ -1198,19 +1203,18 @@ template<class Sp, class Td> inline TLFO& TLFO::modI(uint32_t v){
 }
 
 template<class Sp, class Td> inline float TLFO::line2(){
-	using namespace gam::scl;
-	
-//	// Starts at 1
-//	float r1 = rampDown(phaseI());
-//	float r2 = rampDown(phaseI() + mMod);
-
-	// Starts at -1 (better for creating attack/decay like envelopes)
 	uint32_t m = scl::clip<uint32_t>(mMod, 0xffefffff, 512); // avoid div by zero
-	float r1 = rampDown(phaseI() - m);
-	float r2 = rampDown(phaseI());
-	float p  = rampUpU(m);
 
-	float r = (r1*r1 - r2*r2)/(4.f*p*(1.f - p));
+	/* Starts at 1
+	float r1 = scl::rampDown(phaseI());
+	float r2 = scl::rampDown(phaseI() + m); //*/
+
+	//* Starts at -1 (better for creating attack/decay like envelopes)
+	float r1 = scl::rampDown(phaseI() - m);
+	float r2 = scl::rampDown(phaseI()); //*/
+
+	float p  = punUF(Expo2<float>() | (m >> 9)) - 2.f; // [0, 2);
+	float r = (r1*r1 - r2*r2)/(p*(2.f - p));
 	nextPhase();
 	return r;
 }
@@ -1239,6 +1243,7 @@ DEF(hann(),		tri(); r = r * (0.25f * r*r - 0.75f) + 0.5f)
 DEF(impU(),		scl::pulseU(nextPhase(), this->freqI()) )
 DEF(paraU(),	up(); r*=r;)
 DEF(pulseU(),	scl::pulseU(nextPhase(), mMod))
+DEF(pulseRange(), scl::pulseRange(nextPhase(), mMod))
 DEF(sqrU(),		scl::squareU(nextPhase()))
 DEF(stairU(),	scl::stairU(nextPhase(), mMod))
 DEF(triU(),		scl::triangleU(nextPhase()))

@@ -264,7 +264,6 @@ private:
 	typedef Delay<Tv,Si,Td> Base;
 
 public:
-	//using Base::operator();							// VS2013 error C3066
 
 	/// Default constructor. Does not allocate memory.
 	Comb();
@@ -300,7 +299,7 @@ public:
 
 	void set(float delay, const Tp& ffd, const Tp& fbk); ///< Set several parameters
 
-	Tv operator()() const;						///< Reads delayed element from buffer
+	Tv operator()();
 	Tv operator()(const Tv& i0);				///< Returns next filtered value
 	Tv operator()(const Tv& i0, const Tv& oN);	///< Circulate filter with ffd & fbk
 	Tv circulateFbk(const Tv& i0, const Tv& oN);///< Circulate filter with fbk only	
@@ -513,8 +512,8 @@ TM1 Comb<TM2>::Comb(float delayMax, float delay, const Tp& ffd, const Tp& fbk)
 :	Delay<Tv,Si,Td>(delayMax, delay), mFFD(ffd), mFBK(fbk)
 {}
 
-TM1 inline Tv Comb<TM2>::operator()() const {
-	return Delay<Tv,Si,Td>::operator()();
+TM1 inline Tv Comb<TM2>::operator()(){
+	return Base::operator()();
 }
 
 TM1 inline Tv Comb<TM2>::operator()(const Tv& i0){
