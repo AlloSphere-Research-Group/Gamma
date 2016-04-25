@@ -15,6 +15,20 @@ inline bool near(double a, double b, double eps=1e-6){
 	return scl::abs(a-b) < eps;
 }
 
+namespace gam{
+namespace scl{
+template <class T>
+bool almostEqual(const Complex<T>& a, const Complex<T>& b, int maxULP=10){
+	return scl::almostEqual(a.r,b.r,maxULP) && scl::almostEqual(a.i,b.i,maxULP);
+}
+template <class T>
+bool almostEqual(const Complex<T>& a, const Polar<T>& b, int maxULP=10){
+	Complex<T> t = b;
+	return scl::almostEqual(a.r,t.r,maxULP) && scl::almostEqual(a.i,t.i,maxULP);
+}
+}}
+
+
 //template<class A, class B>
 //inline bool near(A a, B b, double eps=1e-6){
 //	return scl::abs(a-b) < eps;
@@ -72,12 +86,16 @@ int main(int argc, char* argv[]){
 	#include "ut/ut_ipl.cpp"
 	#include "ut/ut_arr.cpp"
 
+	#include "ut/utDomain.cpp"
+
 	#include "ut/utDelay.cpp"
 	#include "ut/utEnvelope.cpp"
 	#include "ut/utFilter.cpp"
 	#include "ut/utGenerators.cpp"
 
-//	printf("Unit testing succeeded.\n");
+	printf("Unit testing succeeded.\n\n");
+
+//	printf("Press 'enter' to quit...\n"); getchar();
 
 	return 0;
 }

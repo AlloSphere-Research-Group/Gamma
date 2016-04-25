@@ -43,7 +43,14 @@ DomainObserver& DomainObserver::operator= (const DomainObserver& rhs){
 
 void DomainObserver::domain(Domain& newSubject){
 	if(&newSubject != mSubject){
-		if(mSubject) nodeRemove();
+		if(mSubject){
+			// If head of list, then set head to right node
+			if(mSubject->mHeadObserver == this){
+				mSubject->mHeadObserver = this->nodeR;
+			}
+
+			nodeRemove();
+		}
 		newSubject.attach(*this);
 		double r = newSubject.spu() / (mSubject ? mSubject->spu() : 1.);
 		mSubject = &newSubject;
@@ -98,7 +105,7 @@ void Domain::notifyObservers(double r){
 	}
 }
 
-void Domain::spu(double v){
+void Domain::spu(double v){ //printf("[%p] Domain::spu(%g)\n", this, v);
 	mHasBeenSet = true;
 	if(v != mSPU){
 		double r = v/mSPU;
@@ -109,6 +116,28 @@ void Domain::spu(double v){
 }
 
 void Domain::ups(double val){ spu(1./val); }
+
+void Domain::print(FILE * fp) const {
+	fprintf(fp, "Domain %p:\n\tspu = %f, ups = %f\n", this, spu(), ups());
+
+	DomainObserver * o = mHeadObserver;
+	unsigned numObs = 0;
+	while(o){
+		++numObs;
+		o = o->nodeR;
+	}
+	
+	fprintf(fp, "\t %u observers%s", numObs, numObs ? ": " : "\n");
+
+	if(numObs){
+		o = mHeadObserver;
+		while(o){
+			fprintf(fp, "%p ", o);
+			o = o->nodeR;
+		}
+		fprintf(fp, "\n");
+	}
+}
 
 /*static*/ Domain& Domain::master(){
 	static Domain * s = new Domain;

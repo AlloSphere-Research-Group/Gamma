@@ -1,9 +1,10 @@
 /*	Description:	
 */
 
-#include "../examples.h"
-#include "Gamma/Scheduler.h"
-
+#include <stdio.h>				// for printing to stdout
+#define GAMMA_H_INC_ALL			// define this to include all header files
+#include "Gamma/Gamma.h"
+using namespace gam;
 
 class Sub : public Process<AudioIOData> {
 public:
@@ -102,7 +103,7 @@ int main(){
 	s.add<Sub>(30).set(5,   0, 0.8, 1.0, 1.0, 1, 100, 100,1.0, 100,5000,0.5, 20,0.5);
 
 	AudioIO io(256, 44100., Scheduler::audioCB, &s);
-	Sync::master().spu(io.fps());
+	gam::sampleRate(io.fps());
 	io.start();
 	printf("\nPress 'enter' to quit...\n"); getchar();
 }

@@ -92,13 +92,16 @@ public:
 	void phase(double v);					///< Set playback position, in [0, 1)
 	void rate(double v);					///< Set playback rate scalar
 	void range(double phs, double period);	///< Set playback interval start phase and period
+
 	void reset();							///< Reset playback head
+	void finish();							///< Set playback head to end
 
 	/// Loop playback head if it's past an endpoint
 	
 	/// This is only applicable for one-shot playback (phsInc::OneShot) and is 
 	/// here to provide run-time switchable looping behavior.
-	void loop();
+	/// \returns whether the playback head was looped
+	bool loop();
 
 	/// Apply linear fade-in/-out envelope(s) to frame buffer
 
@@ -121,18 +124,10 @@ public:
 	double posInInterval(double frac) const;///< Get position from fraction within interval
 	double rate() const { return mRate; }	///< Get playback rate
 
-	/// Returns whether the sample buffer is valid for playback
-	bool valid() const;
 
+	void onDomainChange(double r){ frameRate(mFrameRate); }
 
-	virtual void onDomainChange(double r){ frameRate(mFrameRate); }
-
-protected:	
-	static T * defaultBuffer(){
-		static T v(0);
-		return &v;
-	}
-
+protected:
 	Si<T> mIpol;
 	Sp mPhsInc;
 
@@ -158,7 +153,7 @@ protected:
 #define CLS SamplePlayer<T,Si,Sp>
 
 PRE CLS::SamplePlayer()
-:	Array<T>(defaultBuffer(), 1),
+:	Array<T>(defaultArray<T>(), 1),
 	mPos(0), mInc(0),
 	mFrameRate(1), mChans(1),
 	mRate(1), mMin(0), mMax(1)
@@ -166,20 +161,15 @@ PRE CLS::SamplePlayer()
 
 
 PRE CLS::SamplePlayer(SamplePlayer<T>& src, double rate)
-:	Array<T>(src), 
-	mPos(0), mInc(1), 
-	mFrameRate(src.frameRate()), mChans(src.channels()), 
-	mRate(rate), mMin(0), mMax(src.size())
-{	refreshDomain(); }
+:	mPos(0), mInc(1), mRate(rate)
+{
+	buffer(src);
+}
 
 PRE CLS::SamplePlayer(Array<T>& src, double smpRate, double rate)
-:	Array<T>(src),
-	mPos(0), mInc(1),
-	mFrameRate(smpRate), mChans(1),
-	mRate(rate), mMin(0), mMax(src.size())
+:	mPos(0), mInc(1), mRate(rate)
 {
-	refreshDomain();
-	frameRate(smpRate);
+	buffer(src, smpRate, 1);
 }
 
 
@@ -187,7 +177,7 @@ PRE CLS::SamplePlayer(const char * path, double rate)
 :	Array<T>(), mPos(0), mInc(1), mChans(1), mRate(rate), mMin(0), mMax(1)
 {	
 	if(!load(path)){
-		this->source(defaultBuffer(), 1);
+		this->source(defaultArray<T>(), 1);
 	}
 }
 
@@ -271,6 +261,10 @@ PRE void CLS::reset(){
 	mPhsInc.reset();
 }
 
+PRE void CLS::finish(){
+	pos(rate()<0 ? min() : max());
+}
+
 PRE inline bool CLS::done() const{
 	// The trigger points are based on the logic of phsInc::OneShot
 	if(rate() >= 0.){
@@ -281,8 +275,12 @@ PRE inline bool CLS::done() const{
 	}
 }
 
-PRE void CLS::loop(){
-	if(done()) mPos = phsInc::Loop()(mPos, mInc, max(), min());
+PRE bool CLS::loop(){
+	if(done()){
+		mPos = phsInc::Loop()(mPos, mInc, max(), min());
+		return true;
+	}
+	return false;
 }
 
 PRE void CLS::fade(int fadeOutFrames, int fadeInFrames){
@@ -315,10 +313,6 @@ PRE inline double CLS::period() const { return frames() * ups(); }
 
 PRE inline double CLS::posInInterval(double frac) const {
 	return min() + (max() - min()) * frac;
-}
-
-PRE bool CLS::valid() const {
-	return this->mElems && (this->mElems != defaultBuffer());
 }
 
 #undef PRE

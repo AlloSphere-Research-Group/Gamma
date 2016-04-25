@@ -5,11 +5,11 @@
 	Description:	Writing and reading a sound file.
 */
 
-
-
-#include "../examples.h"
+#include "Gamma/Gamma.h"
+#include "Gamma/SoundFile.h"
 
 int main(){
+	using namespace gam;
 
 	const char * path = "test.aiff";
 	SoundFile sf(path);
@@ -22,9 +22,9 @@ int main(){
 		const int numFrames = sampleRate * lenSec;
 		
 		float freq = 440;
-		float buf[numFrames*2];		// Buffer for storing samples.
-									// The samples are stored interleaved as 
-									// sequential stereo frames.
+		float * buf = new float[numFrames*2];		// Buffer for storing samples.
+													// The samples are stored interleaved as 
+													// sequential stereo frames.
 		sf.format(SoundFile::AIFF);
 		sf.encoding(SoundFile::PCM_16);
 		sf.channels(2);
@@ -51,6 +51,8 @@ int main(){
 		else{										printf("fail\n"); exit(-1); }
 		
 		sf.close();
+
+		delete[] buf;
 	}
 
 
@@ -63,7 +65,7 @@ int main(){
 		//sf.print();
 		
 		int numFrames = sf.frames();
-		float buf[sf.samples()];
+		float * buf = new float[sf.samples()];
 		
 		//sf.readAll(buf);		// read all samples from sound file into buffer
 
@@ -84,6 +86,8 @@ int main(){
 		else{										printf("fail\n"); exit(-1); }
 
 		sf.close();
+
+		delete[] buf;
 	}
 
 	return 0;

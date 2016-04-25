@@ -17,7 +17,7 @@ namespace gam{
 /// by feeding a full-wave rectification of the signal through a low-pass filter.
 ///\ingroup Filters, Envelopes, Analysis
 template <class Tv=real, class Tp=real, class Td=DomainObserver>
-class EnvFollow{
+class EnvFollow : public Td {
 public:
 
 	/// \param[in] freq		Cutoff frequency of smoothing filter
@@ -30,10 +30,60 @@ public:
 
 	/// Returns current amplitude estimate
 	Tv value() const { return lpf.last(); }
-	
+
+	/// Set lag length of filter
+	EnvFollow& lag(Tp v){ lpf.lag(v); return *this; }
+
+	/// Checks if current estimate is less than a threshold
 	bool done(Tv eps=0.001) const { return value() < eps; }
 
 	OnePole<Tv,Tp,Td> lpf;	///< Low-pass filter
+};
+
+
+
+/// Silence detector
+
+/// This returns true if the magnitude of the input signal remains less than
+/// some threshold over a specified number of samples.
+/// \ingroup Analysis
+class SilenceDetect{
+public:
+	SilenceDetect(unsigned count = 1000)
+	:	mNumSilent(0), mCount(count)
+	{}
+
+
+	/// Set number of samples required to trigger silence
+
+	/// This is the number of contiguous samples that must be below the
+	/// threshold magnitude in order to trigger a silence detection.
+	SilenceDetect& count(unsigned v){
+		mCount=v; return *this;
+	}
+
+	/// Reset the silence counter
+	void reset(){ mNumSilent = 0; }
+
+	/// Detect silence in input signal
+	/// \param[in] input		The input signal
+	/// \param[in] threshold	Magnitude below which a signal is considered silent
+	/// \returns true if silence was detected, otherwise false
+	template <typename T>
+	bool operator()(const T& input, const T& threshold=T(0.001)){
+		if(scl::abs(input) < threshold){
+			++mNumSilent;
+			return done();
+		}
+		reset();
+		return false;
+	}
+
+	/// Returns true if silence is being detected
+	bool done() const { return mNumSilent >= mCount; }
+
+private:
+	unsigned mNumSilent, mCount;
 };
 
 
@@ -104,7 +154,7 @@ class ZeroCrossRate{
 public:
 
 	/// \param[in] winSize		size of analysis window
-	ZeroCrossRate(int winSize=64)
+	ZeroCrossRate(int winSize=256)
 	:	mRate(0), mWinSize(winSize), mCrosses(0), mCount(0)
 	{}
 
@@ -113,6 +163,7 @@ public:
 
 	/// Get the current zero-crossing rate, in [0, 0.5]
 	float rate() const { return mRate; }
+	float value() const { return mRate; }
 	
 	/// Get window size
 	unsigned winSize() const { return mWinSize; }

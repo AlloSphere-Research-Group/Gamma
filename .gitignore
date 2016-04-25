@@ -12,6 +12,9 @@ cmake_install.cmake
 doc/html
 doc/latex
 
+Gamma_VS2013/
+
+
 *~
 *.link
 *.a

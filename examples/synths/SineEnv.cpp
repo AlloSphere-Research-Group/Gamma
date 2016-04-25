@@ -5,8 +5,10 @@
 	Description:	
 */
 
-#include "../examples.h"
-#include "Gamma/Scheduler.h"
+#include <stdio.h>				// for printing to stdout
+#define GAMMA_H_INC_ALL			// define this to include all header files
+#include "Gamma/Gamma.h"
+using namespace gam;
 
 class SineEnv : public Process<AudioIOData> {
 public:
@@ -131,7 +133,7 @@ int main(){
 	s.add<SineEnv>( 60.0).set(3.5, 230, 0.3, 1, 2);
 	
 	AudioIO io(256, 44100., Scheduler::audioCB, &s);
-	Sync::master().spu(io.fps());
+	gam::sampleRate(io.fps());
 	io.start();
 	printf("\nPress 'enter' to quit...\n"); getchar();
 }

@@ -5,7 +5,9 @@
 	T("11111111111111111111111111111110", 0xfffffffe)
 	#undef T
 
-	{	Twiddle<float> t(0);
+	{
+		float value = 0;
+		Twiddle<float> t(value);
 		#define T(x, y) assert(x == y);
 		T(t.i, 0) T(t.u, 0) T(t.f, 0)
 		t.f = 0.5; T(t.u, bitsToUInt("001111110")<<23)

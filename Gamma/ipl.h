@@ -22,7 +22,8 @@ namespace ipl{
 /// Interpolation types
 enum Type{
 	TRUNC=0,	/**< Truncating interpolation */
-	ROUND,		/**< Rounding interpolation */
+	ROUND,		/**< Nearest neighbor interpolation */
+	MEAN2,		/**< Mean of two nearest neighbors */
 	LINEAR,		/**< Linear interpolation */
 	CUBIC,		/**< Cubic interpolation */
 	ALLPASS		/**< Allpass interpolation */
@@ -79,17 +80,35 @@ Tv linear(Tf frac, const Tv& x, const Tv& y);
 template <class Tf, class Tv>
 Tv linear(Tf frac, const Tv& x, const Tv& y, const Tv& z);
 
-template <class T> void linear(T * dst, const T * xs, const T * xp1s, unsigned len, T frac);
+/// Linear interpolation between two arrays
+template <class T>
+void linear(T * dst, const T * xs, const T * xp1s, unsigned len, T frac);
 
 /// Nearest neighbor interpolation
 template <class Tf, class Tv>
 Tv nearest(Tf frac, const Tv& x, const Tv& y);
 
+/// Trapezoidal interpolation
+template <class Tf, class Tv>
+Tv trapz(Tf frac, Tv a, Tv b);
+
+/// Trapezoidal interpolation; fraction in [0,2] to save a multiply
+template <class Tf, class Tv>
+Tv trapz2(Tf frac02, Tv a, Tv b);
+
 /// Quadratic interpolation
 template <class Tf, class Tv>
 Tv quadratic(Tf frac, const Tv& x, const Tv& y, const Tv& z); 
 
-
+/// Trilinear interpolation between eight corners of a cube.
+template <class Tf3, class Tv>
+inline Tv trilinear(
+	const Tf3& f,
+	const Tv& v000, const Tv& v100,
+	const Tv& v010, const Tv& v110,
+	const Tv& v001, const Tv& v101,
+	const Tv& v011, const Tv& v111
+);
 
 
 // Implementation_______________________________________________________________
@@ -227,11 +246,49 @@ template <class T> inline T parabolic(T xm1, T x, T xp1){
 
 
 template <class Tf, class Tv>
+inline Tv trapz(Tf frac, Tv a, Tv b){
+	return trapz2(frac*Tf(2), a,b);
+}
+
+template <class Tf, class Tv>
+inline Tv trapz2(Tf frac02, Tv a, Tv b){
+	if(frac02 < Tf(1)){
+		return a + b*frac02;
+	}
+	else{
+		return a*(Tf(2)-frac02) + b;
+	}
+}
+
+template <class Tf, class Tv>
 inline Tv quadratic(Tf f, const Tv& x, const Tv& y, const Tv& z){
 	Tv c2 = (x + z)*Tf(0.5) - y;
 	//Tv c1 = x*(Tf)-1.5 + y*(Tf)2 - z*(Tf)0.5;
 	Tv c1 = -x + y - c2;
 	return (c2 * f + c1) * f + x;
+}
+
+template <class F3, class Tv>
+inline Tv trilinear(
+	const F3& f,
+	const Tv& v000, const Tv& v100,
+	const Tv& v010, const Tv& v110,
+	const Tv& v001, const Tv& v101,
+	const Tv& v011, const Tv& v111
+){
+	float f1=f[0], f2=f[1];
+
+	return
+	linear(f[2],
+		linear(f2,
+			linear(f1, v000, v100),
+			linear(f1, v010, v110)
+		),
+		linear(f2,
+			linear(f1, v001, v101),
+			linear(f1, v011, v111)
+		)
+	);
 }
 
 } // ipl::
