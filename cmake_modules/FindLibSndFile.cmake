@@ -17,11 +17,12 @@ libfind_pkg_check_modules(SNDFILE_PKGCONF libsndfile)
 # Include dir
 find_path(SNDFILE_INCLUDE_DIR
   NAMES sndfile.h
-  PATHS ${SNDFILE_PKGCONF_INCLUDE_DIRS} 
+  PATHS ${SNDFILE_PKGCONF_INCLUDE_DIRS}
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/libsndfile/include"
 )
 
 # Finally the library itself
@@ -32,6 +33,7 @@ find_library(SNDFILE_LIBRARY
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/libsndfile/lib"
 )
 
 # Set the include dir variables and the libraries and let libfind_process do the rest.

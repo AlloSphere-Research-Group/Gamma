@@ -29,7 +29,8 @@ if(NOT DEFINED BUILD_ROOT_DIR)
 endif(NOT DEFINED BUILD_ROOT_DIR)
 
 # Gamma Library
-set(GAMMA_SRC src/arr.cpp
+set(GAMMA_SRC
+  src/arr.cpp
   src/AudioIO.cpp
   src/Conversion.cpp
   src/DFT.cpp
@@ -141,7 +142,7 @@ if(BUILD_EXAMPLES)
 	SOURCES ${example}
 	COMMENT "Running: ${EXAMPLE_TARGET}")
     endforeach(example)
-  endforeach(dir) 
+  endforeach(dir)
 endif(BUILD_EXAMPLES)
 
 

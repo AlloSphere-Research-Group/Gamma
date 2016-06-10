@@ -17,11 +17,12 @@ libfind_pkg_check_modules(PORTAUDIO_PKGCONF portaudio)
 # Include dir
 find_path(PORTAUDIO_INCLUDE_DIR
   NAMES portaudio.h
-  PATHS ${PORTAUDIO_PKGCONF_INCLUDE_DIRS} 
+  PATHS ${PORTAUDIO_PKGCONF_INCLUDE_DIRS}
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/portaudio/include"
 )
 
 # Finally the library itself
@@ -32,6 +33,7 @@ find_library(PORTAUDIO_LIBRARY
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/portaudio/x86/Release"
 )
 
 # Set the include dir variables and the libraries and let libfind_process do the rest.
