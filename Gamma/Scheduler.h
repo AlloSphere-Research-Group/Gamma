@@ -320,7 +320,8 @@ protected:
 template <class TAudioIOData>
 class Process : public ProcessNode{
 public:
-    Process( double dt) : ProcessNode(dt) {}
+	Process() {}
+	Process( double dt) : ProcessNode(dt) {}
 
 	virtual void onProcess(TAudioIOData& io) = 0;
 
