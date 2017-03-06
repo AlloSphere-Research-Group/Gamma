@@ -184,7 +184,7 @@ private:
 		}
 		#endif
 		memcpy(mData, data, size);
-		//printf("Func::set() with %d bytes\n", size);		
+		//printf("Func::set() with %d bytes\n", size);
 	}
 };
 
@@ -278,9 +278,9 @@ public:
 
 	/// Flag self (and consequently all descendents) for deletion
 	ProcessNode& free();
-	
+
 	/// Set whether processor is active
-	
+
 	/// If true, then the processor is executed in the synthesis network.
 	/// If false, the processor and its descendents are skipped.
 	ProcessNode& active(bool v);
@@ -296,13 +296,13 @@ public:
 
 protected:
 	friend class Scheduler;
-	
+
 	enum{
 		INACTIVE=0,		// node and descendents are not executed
 		ACTIVE,			// node and descendents are executed
-		DONE			// processing done, node and descendents can be removed
+		DONE			// class Processing done, node and descendents can be removed
 	};
-	
+
 	int mStatus;
 	double mDelay;
 	bool mDeletable;
@@ -320,6 +320,7 @@ protected:
 template <class TAudioIOData>
 class Process : public ProcessNode{
 public:
+    Process( double dt) : ProcessNode(dt) {}
 
 	virtual void onProcess(TAudioIOData& io) = 0;
 
@@ -336,7 +337,7 @@ public:
 	ControlFunc(const Func& f, double dt=0)
 	:	mFunc(f), mDelay(dt), mPeriod(0), mObjDel(0)
 	{}
-	
+
 	ControlFunc& dt(double v){ mDelay=v; return *this; }
 	ControlFunc& period(double v){ mPeriod=v; return *this; }
 
@@ -354,8 +355,8 @@ protected:
 
 /// Schedules real-time audio processes
 
-/// Before starting the scheduler, you must map your application's audio buffers 
-/// and other information to the scheduler's SchedulerAudioIOData (accessed with 
+/// Before starting the scheduler, you must map your application's audio buffers
+/// and other information to the scheduler's SchedulerAudioIOData (accessed with
 /// the io() method).
 class Scheduler : public ProcessNode{
 public:
@@ -369,9 +370,9 @@ public:
 
 	/// Test whether the synthesis graph is empty
 	bool empty() const;
-	
+
 	/// Check free list for finished events and reclaim their memory
-	
+
 	/// \returns number of events deleted
 	///
 	int reclaim();
@@ -379,7 +380,7 @@ public:
 	/// Get internal audio I/O data structure
 	const SchedulerAudioIOData& io() const { return mIO; }
 	SchedulerAudioIOData& io(){ return mIO; }
-	
+
 
 	/// Add dynamically allocated process as first child of root node
 	template <class AProcess>
@@ -442,7 +443,7 @@ public:
 
 	/// Execute all audio processes in execution tree
 
-	/// This should be called at the audio block rate. 
+	/// This should be called at the audio block rate.
 	/// The latency of events will be determined by the block size.
 	void update();
 
@@ -507,7 +508,7 @@ protected:
 			ADD_LAST_CHILD,
 			REMOVE_CHILD
 		};
-		
+
 		//double time;
 		Type type;
 		ProcessNode * object;
@@ -520,7 +521,7 @@ protected:
 //		};
 	};
 
-//	std::priority_queue<Command, std::vector<Command>, Command::Compare> 
+//	std::priority_queue<Command, std::vector<Command>, Command::Compare>
 //		mCommandQueue;
 
 	// LPT:  low-priority thread
@@ -533,7 +534,7 @@ protected:
 	double mTime;			// scheduler's time, in seconds
 	SchedulerAudioIOData mIO;
 	bool mRunning;
-	
+
 	static void * cLPThreadFunc(void * user);
 
 	void pushCommand(Command::Type c, ProcessNode * object, ProcessNode * other);
@@ -545,8 +546,8 @@ protected:
 	void hpUpdateTree();
 
 	void hpUpdateControlFuncs(double dt);
-	
-	// Moves branches marked as being done to a free list for cleanup by a 
+
+	// Moves branches marked as being done to a free list for cleanup by a
 	// lower priority thread.
 	void hpUpdateFreeList();
 
