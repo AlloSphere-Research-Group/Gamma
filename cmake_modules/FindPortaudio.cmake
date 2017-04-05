@@ -22,18 +22,18 @@ find_path(PORTAUDIO_INCLUDE_DIR
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/portaudio/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/external/include"
 )
 
 # Finally the library itself
 find_library(PORTAUDIO_LIBRARY
-  NAMES portaudio
+  NAMES portaudio portaudio_x86
   PATHS ${PORTAUDIO_PKGCONF_LIBRARY_DIRS}
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-      "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/portaudio/x86/Release"
+      "${CMAKE_CURRENT_SOURCE_DIR}/external/lib_win32"
 )
 
 # Set the include dir variables and the libraries and let libfind_process do the rest.

@@ -10,6 +10,10 @@
 
 /// \defgroup access Array access
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#undef max
+#endif
+
 namespace gam{
 
 typedef int index_t;

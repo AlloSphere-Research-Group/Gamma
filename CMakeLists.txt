@@ -8,9 +8,10 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
-
-if(NOT (COMPILER_SUPPORTS_CXX11 OR COMPILER_SUPPORTS_CXX0X))
-	message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+if ((${CMAKE_SYSTEM_NAME} MATCHES "Dariwn") OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
+  if(NOT (COMPILER_SUPPORTS_CXX11 OR COMPILER_SUPPORTS_CXX0X))
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+  endif()
 endif()
 
 if(COMPILER_SUPPORTS_CXX11)
@@ -122,7 +123,7 @@ endif((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 # Examples -----------------------------------------------
 
 if(BUILD_EXAMPLES)
-  set(EXAMPLE_DIRS algorithmic curves effects filter function generator io spectral synths)
+  set(EXAMPLE_DIRS algorithmic analysis curves effects envelope filter function io oscillator source spatial spectral synthesis synths techniques)
   foreach(dir ${EXAMPLE_DIRS})
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin/examples/${dir}")
 	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "examples/${dir}/*.cpp")

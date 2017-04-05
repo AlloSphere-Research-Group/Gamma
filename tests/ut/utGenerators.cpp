@@ -1,3 +1,8 @@
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+	#undef min
+	#undef max
+#endif
+
 {
 	const int N = 32;
 	RFFT<float> fft(N);
