@@ -190,6 +190,7 @@ struct Cubic{
 
 	/// Return interpolated element from power-of-2 array
 	T operator()(const ArrayPow2<T>& a, uint32_t phase) const{
+		//*
 		uint32_t one = a.oneIndex();
 		return ipl::cubic(
 			a.fraction(phase),
@@ -197,7 +198,17 @@ struct Cubic{
 			a.atPhase(phase),
 			a.atPhase(phase + one),
 			a.atPhase(phase + (one<<1))
-		);
+		);//*/
+		/*
+		unsigned i = a.index(phase);
+		unsigned m = a.size() - 1;
+		return ipl::cubic(
+			a.fraction(phase),
+			a[(i-1)&m],
+			a[ i ],
+			a[(i+1)&m],
+			a[(i+2)&m]
+		);//*/
 	}
 
 	/// Return interpolated element from array
@@ -418,17 +429,8 @@ namespace iplSeq{
 	template <class T>
 	struct Linear : public Base<2,T>{
 		using Base<2,T>::v;
-		Linear(const T& v=0): Base<2,T>(v), mDiff(T(0)){}
-
-		void push(T va){
-			Base<2,T>::push(va);
-			mDiff = v[0] - v[1];
-		}
-
-		T operator()(float f) const { return mDiff*f + v[1]; }
-
-	private:
-		T mDiff;
+		Linear(const T& v=0): Base<2,T>(v){}
+		T operator()(float f) const { return ipl::linear(f, v[1], v[0]); }
 	};
 
 	/// Cubic sequence interpolation strategy
@@ -491,6 +493,56 @@ namespace phsInc{
 	};
 
 
+	/// Play then hold waveform
+	struct Pulse{
+
+		Pulse(){
+			pulse(2,4);
+			reset();
+		}
+
+		/// Set width and period of pulse
+
+		/// \param[in] width	pulse width in cycles
+		/// \param[in] period	total pulse period in cycles
+		Pulse& pulse(uint32_t width, uint32_t period){
+			mWidth = width;
+			mPeriod = period;
+			return *this;
+		}
+
+		void reset(){ mPhase=0; mCycle=0; setOn(); }
+
+		uint32_t operator()(uint32_t& pos, uint32_t inc){
+			uint32_t prev = mPhase;
+			mPhase += inc;
+
+			// Check for phase wrap
+			if((prev > mPhase) ^ (inc >> 31)){
+				//if(++mCycle >= mPeriod) mCycle=0;
+				mCycle = (mCycle+1) % mPeriod;
+				setOn();
+			}
+
+			if(mOn){
+				pos = mPhase;
+			}
+
+			return pos;
+		}
+
+		bool done(uint32_t pos) const { return false; }
+
+	private:
+		uint32_t mPhase;
+		uint32_t mCycle;
+		uint32_t mWidth;
+		uint32_t mPeriod;
+		uint8_t mOn;
+		void setOn(){ mOn = mCycle<mWidth; }
+	};
+
+
 	/// Play waveform one cycle, then hold at the end. A one-shot.
 
 	/// \ingroup Strategies, phsInc
@@ -501,6 +553,10 @@ namespace phsInc{
 			uint32_t prev = pos;
 			pos += inc;
 			if(~pos & prev & 0x80000000) pos = 0xffffffff;
+			// correct version
+			/*if((prev>pos) ^ (inc>>31)){
+				pos = (inc>>31) ? 0 : -1;
+			}*/
 			// pos3:	1101	inc = 0001
 			// pos2:	1110
 			// pos1:	1111
@@ -518,7 +574,7 @@ namespace phsInc{
 
 	/// \ingroup Strategies, phsInc
 	struct NShot{
-		NShot(){ number(1); reset(); }
+		NShot(){ repeats(1); reset(); }
 		
 		void reset(){ mCount=0; }
 
@@ -529,25 +585,26 @@ namespace phsInc{
 			// Check MSB goes from 1 to 0
 			// TODO: works only for positive increments and non-zero mNumber
 			if((~pos & prev) & 0x80000000){
-				if(++mCount >= mNumber) pos = 0xffffffff;
+				if(++mCount >= mRepeats) pos = 0xffffffff;
 			}
 			return pos;
 		}
 		
-		bool done(uint32_t pos) const { return (mCount >= mNumber) && (pos == 0xffffffff); }
+		bool done(uint32_t pos) const { return (mCount >= mRepeats) && (pos == 0xffffffff); }
 		
 		template <class T>
 		T operator()(T v, T inc, T max, T min){
 			v += inc;
 			if(v >= max || v < min) ++mCount;
-			return mCount < mNumber ? scl::wrap(v, max, min) : incClip(v, inc, max, min);
+			return mCount < mRepeats ? scl::wrap(v, max, min) : incClip(v, inc, max, min);
 		}
 		
-		// Set number of repetitions
-		NShot& number(uint32_t v){ mNumber=v; return *this; }
+		/// Set number of repetitions
+		NShot& repeats(uint32_t v){ mRepeats=v; return *this; }
+		NShot& number(uint32_t v){ mRepeats=v; return *this; }
 
 	private:
-		uint32_t mNumber;
+		uint32_t mRepeats;
 		uint32_t mCount;
 	};
 
@@ -588,49 +645,65 @@ namespace phsInc{
 	struct Rhythm{
 	
 		Rhythm(){
-			pattern(0,0);
+			pattern(2,2);
 			reset();
 		}
 	
-		void reset(){ mPhase=0; mIndex=0; }
+		void reset(){ mPhase=0; mIndex=0; setOn(); }
 
 		uint32_t operator()(uint32_t& pos, uint32_t inc){
 			uint32_t prev = mPhase;
 			mPhase += inc;
 
-			// Check MSB goes from 1 to 0
-			// TODO: works only for positive increments
-			if((~mPhase & prev) & 0x80000000){
-				if(++mIndex >= mSize) mIndex=0;
+			// Check for phase wrap
+			if((prev>mPhase) ^ (inc>>31)){
+				mIndex = (mIndex+1) % mSize;
+				setOn();
 			}
 
-			uint32_t bit = (mPattern >> (mSize-1 - mIndex)) & 1UL;
-			if(bit){
+			if(mOn){
 				pos = mPhase;
 			}
+
 			return pos;
 		}
+
+		bool done(uint32_t pos) const { return false; }
 		
-		Rhythm& pattern(uint32_t bits, uint16_t size){
+		Rhythm& pattern(uint64_t bits, uint8_t size){
 			mPattern=bits;
 			mSize=size;
 			return *this;
 		}
 		
-		Rhythm& pattern(const char* bits){
+		/// Specify on/off pattern as string, e.g., "/./....."
+		Rhythm& pattern(const char* bits, char offChar='.'){
 			mSize = strlen(bits);
 			mPattern = 0;
 			for(int i=0; i<mSize; ++i){
-				mPattern |= (bits[i]!='.') << (mSize-1-i);
+				mPattern |= (bits[i]!=offChar) << (mSize-1-i);
 			}
 			return *this;
 		}
-		
+
+		/// Set pattern of play then hold cycles
+
+		/// \param[in] pulseWidth	pulse width in cycles
+		/// \param[in] length		total pulse length in cycles
+		Rhythm& pulse(uint8_t pulseWidth, uint8_t length){
+			mSize = length;
+			uint64_t ones = -1;
+			mPattern = (ones>>(64-mSize)) & (ones<<(length-pulseWidth));			
+			return *this;
+		}
+
 	private:
+		uint64_t mPattern;
 		uint32_t mPhase;
-		uint32_t mPattern;
-		uint16_t mIndex;
-		uint16_t mSize;
+		uint8_t mOn;
+		uint8_t mIndex;
+		uint8_t mSize;
+		void setOn(){ mOn = (mPattern >> (mSize-1 - mIndex)) & uint64_t(1); }
 	};
 
 	typedef Loop Wrap;

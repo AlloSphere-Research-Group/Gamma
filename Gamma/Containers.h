@@ -154,8 +154,12 @@ public:
 	/// If the new size is greater than the old size, then the argument value
 	/// is copied into the additional elements.
 	void resize(uint32_t newSize, const T& c=T());
-	void source(ArrayBase<T,S,A>& src);		///< Sets source of array elements to another array
-	void source(T * src, uint32_t size);	///< Sets source of array elements to another array
+
+	/// Sets source of array elements to another array
+	void source(ArrayBase<T,S,A>& src);
+
+	/// Sets source of array elements to another array
+	void source(T * src, uint32_t size, bool unmanaged=false);
 
 	/// Called whenever the size changes
 	virtual void onResize(){}
@@ -275,6 +279,15 @@ public:
 	/// \param[ in] delay	how many elements ago to begin copy;
 	///						if delay<0, then delay -> size() + delay
 	void read(T * dst, uint32_t len, int32_t delay=-1) const;
+
+	/// Copies elements out of ring to another array
+
+	/// \param[out] dst		array to copy elements to
+	/// \param[ in] len		number of elements to copy
+	/// \param[ in] delay	how many elements ago to begin copy;
+	///						if delay<0, then delay -> size() + delay
+	///	\param[ in] from	array index to read history relative to
+	void readFrom(T * dst, uint32_t len, int32_t delay, uint32_t from) const;
 	
 	uint32_t pos() const;			///< Return absolute index of frontmost (newest) element
 	bool reachedEnd() const;		///< Returns whether the last element written was at the end of the array
@@ -537,11 +550,13 @@ void ArrayBase<T,S,A>::source(ArrayBase<T,S,A>& src){
 }
 
 template <class T, class S, class A>
-void ArrayBase<T,S,A>::source(T * src, uint32_t size){
+void ArrayBase<T,S,A>::source(T * src, uint32_t size, bool unmanaged){
 	if(src == mElems) return; // check for self assignment
-	clear();
-	if(managing(src)){
-		++refCount()[src];
+	if(false==unmanaged){
+		clear();
+		if(managing(src)){
+			++refCount()[src];
+		}
 	}
 	mElems = src;
 	mSize(size);
@@ -588,16 +603,20 @@ inline void Ring<T,A>::operator()(const T& v){
 
 template<class T, class A>
 void Ring<T,A>::read(T * dst, uint32_t len, int32_t delay) const{
+	// pos() points to most recently written slot
+	readFrom(dst, len, delay, pos());
+}
+
+template<class T, class A>
+void Ring<T,A>::readFrom(T * dst, uint32_t len, int32_t delay, uint32_t from) const{
 
 	if(delay < 0) delay += int32_t(size());
 
-	// pos() points to most recently written slot
-	//uint32_t begin = (pos() - delay) % size();
-	uint32_t begin = (uint32_t)scl::wrap(int32_t(pos()) - delay, int32_t(size()));
+	uint32_t begin = (uint32_t)scl::wrap(int32_t(from) - delay, int32_t(size()));
 
 	// this ensures that we don't copy across the ring tap boundary
 	// we add one to maxLen because of a fence post anomaly
-	uint32_t maxLen = (begin < pos() ? (pos() - begin) : (pos() + (size() - begin))) + 1;
+	uint32_t maxLen = (begin < from ? (from - begin) : (from + (size() - begin))) + 1;
 	len = scl::min(len, maxLen);
 	
 	mem::copyFromRing(elems(), size(), begin, dst, len);

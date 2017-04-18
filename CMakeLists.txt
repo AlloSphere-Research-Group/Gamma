@@ -39,7 +39,6 @@ set(GAMMA_SRC
   src/FFT_fftpack.cpp
   src/fftpack++1.cpp
   src/fftpack++2.cpp
-  src/File.cpp
   src/Print.cpp
   src/scl.cpp
   src/Recorder.cpp
