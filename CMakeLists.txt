@@ -44,7 +44,7 @@ set(GAMMA_SRC
   src/Recorder.cpp
   src/Scheduler.cpp
   src/SoundFile.cpp
-
+  src/Timer.cpp
   src/fftpack++.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
