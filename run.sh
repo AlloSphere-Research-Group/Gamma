@@ -64,7 +64,7 @@ fi
 shift
 
 if [ "$MSYSTEM" = "MINGW64" -o "$MSYSTEM" = "MINGW32" ]; then
-  GENERATOR_FLAG = "-GMSYS Makefiles"
+  GENERATOR_FLAG="-GMSYS Makefiles"
 fi
 
 if [ -n "$debugger" ]; then
