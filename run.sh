@@ -23,6 +23,10 @@ done
 
 # Get the number of processors on OS X, linux, and (to-do) Windows.
 NPROC=$(grep --count ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu || 2)
+# Get it when on MinGW (Windows)
+if [ "$MSYSTEM" = "MINGW64" -o "$MSYSTEM" = "MINGW32" ]; then
+	NPROC=$NUMBER_OF_PROCESSORS
+fi
 # Save one core for the gui.
 PROC_FLAG=$((NPROC - 1))
 
@@ -59,10 +63,14 @@ fi
 # Don't pass target as Make flag.
 shift
 
+if [ "$MSYSTEM" = "MINGW64" -o "$MSYSTEM" = "MINGW32" ]; then
+  GENERATOR_FLAG = "-GMSYS Makefiles"
+fi
+
 if [ -n "$debugger" ]; then
-  cmake . "$TARGET_FLAG" "$DBUILD_FLAG" -DRUN_IN_DEBUGGER=1 "-DGAMMA_DEBUGGER=${debugger}" -DCMAKE_BUILD_TYPE=Debug > cmake_log.txt
+  cmake . "$GENERATOR_FLAG" "$TARGET_FLAG" "$DBUILD_FLAG" -DRUN_IN_DEBUGGER=1 "-DGAMMA_DEBUGGER=${debugger}" -DCMAKE_BUILD_TYPE=Debug > cmake_log.txt
 else
-  cmake . "$TARGET_FLAG" "$DBUILD_FLAG" -DRUN_IN_DEBUGGER=0 -DCMAKE_BUILD_TYPE=Release -Wno-dev > cmake_log.txt
+  cmake . "$GENERATOR_FLAG" "$TARGET_FLAG" "$DBUILD_FLAG" -DRUN_IN_DEBUGGER=0 -DCMAKE_BUILD_TYPE=Release -Wno-dev > cmake_log.txt
 fi
 
 make $TARGET -j$PROC_FLAG $*
