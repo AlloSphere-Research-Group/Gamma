@@ -60,7 +60,7 @@ endforeach()
 add_library(Gamma ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
 set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/bin")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 
 # TODO: allow choosing static or dynamic libraries
 
