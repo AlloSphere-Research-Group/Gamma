@@ -12,6 +12,8 @@ cmake_install.cmake
 
 Gamma_VS2013/
 
+lib/
+bin/
 
 *~
 *.link
