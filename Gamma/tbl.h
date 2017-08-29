@@ -705,12 +705,12 @@ namespace{
 	}
 
 	template<>
-	Complex<float> getSin<Complex<float> >(double p){
+	inline Complex<float> getSin<Complex<float> >(double p){
 		return Complex<float>(cos(p), sin(p));
 	}
 
 	template<>
-	Complex<double> getSin<Complex<double> >(double p){
+	inline Complex<double> getSin<Complex<double> >(double p){
 		return Complex<double>(cos(p), sin(p));
 	}
 };
