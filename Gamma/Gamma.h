@@ -41,7 +41,9 @@
 #ifdef GAMMA_H_INC_ALL
 
 	// System/Utility
+#ifndef GAMMA_H_NO_IO
 	#include "Gamma/AudioIO.h"
+#endif
 	#include "Gamma/Conversion.h"
 	#include "Gamma/Print.h"
 	#include "Gamma/TransferFunc.h"
