@@ -1,9 +1,9 @@
-# Gamma
+# Gamma #
 ### Generic Synthesis C++ Library
 
 
-1. About
-========================================
+# About #
+
 Gamma is a cross-platform, C++ library for doing generic synthesis and 
 filtering of signals. It contains helpful mathematical functions, 
 types, such as vectors and complex numbers, an assortment of sequence 
@@ -12,46 +12,40 @@ It is oriented towards real-time sound and graphics synthesis, but is
 equally useful for non-real-time tasks.
 
 
-2. Compilation Instructions
-========================================
-The source code can either be built into a library or directly compiled from source into an application.
-In the following, the base directory is where this README file is located.
+# Compilation Instructions #
 
+The source code can either be built into a library or directly compiled from source into an application. In the following, the base directory is where this README file is located.
 
-2.1 Building a Library
-----------------------------------------
+## Building a Library
 
-Gamma uses Cmake to build. You should be able to build Gamma by running
+### Make (Linux, OS X)
+In most cases, simply running
 
-	cmake .
 	make
 
-will build the library and the examples with automatically detected platform settings.
-You will need to install dependencies detailed in section 2.3 below.
+will build the library with automatically detected platform settings. See Makefile.config for other build options.
 
-On OS X an Xcode project can be produced by running Cmake like this:
+There are several other rules within Makefile. These are:
 
-        cmake  .
+	make			- builds static library
+	make install		- installs library into DESTDIR
+	make clean		- removes binaries from build folder
+	make test		- performs unit tests
 
-(You may need to delete old CMakeCache.txt and the CMakeFiles directory manually or using the distclean script, see below.)
+The script 'run.sh' can be used to compile and run examples and other source files against the Gamma library. For example,
 
-Gamma is built as a static library and the binaries are located in the build/ directory.
+	./run.sh examples/oscillator/sine.cpp
 
-Some useful options to pass to cmake include:
+To only compile the source file without running, include AUTORUN=0 after the source file. Binaries are located in the automatically generated 'build/' directory. On OSX, the Gamma library will be linked to the pre-compiled dependent libraries in external/lib_osx. On Linux, use apt-get to install the necessary dependent libraries (see 2.3 below).
 
- * `-DBUILD_EXAMPLES=1` : To generate projects with the examples as targets
- * `-DCMAKE_INSTALL_PREFIX:PATH=/usr` : To set install prefix
 
-To generate an Xcode project where you can try out the Gamma examples,
-you should run cmake like this:
+### Xcode (OS X)
+1. Open project/xcode/gamma.xcodeproj
+2. Build the target 'libgamma{.a, .dylib}'. The library will be in project build folder.
 
-        cmake . -DBUILD_EXAMPLES=1 -G Xcode
 
-2.2 Compiling Direct From Source
----
-Individual Gamma files can easily be added and compiled directly from source into an existing project.
-This way there is no need to build Gamma before using, but it may require
-adding to your project a set of files as some Gamma files depend on others.
+## Compiling Direct From Source
+Gamma can easily be compiled directly from source into an existing project.
 
 Make sure to pass in the following flags to the compiler:
 
@@ -59,44 +53,19 @@ Make sure to pass in the following flags to the compiler:
 	-finline-functions (or -O3)
 	-fpeel-loops
 
+## Dependencies
 
-2.3 Dependencies
-----------------------------------------
-Gamma depends on PortAudio v19 and libsndfile for performing audio and sound file i/o, respectively.
-They are required only if using certain Gamma classes.
-PortAudio is required ONLY if you are using AudioIO (AudioIO.h).
-Libsndfile is required ONLY for SoundFile i/o and playback (SoundFile.h, Player.h).
+Gamma depends on PortAudio v19 and libsndfile for performing audio and sound file i/o, respectively. They are required only if using certain Gamma classes. 
 
-You will also need Cmake to build Gamma. 
+PortAudio is required ONLY if you are using Gamma's AudioIO class (defined in Gamma/AudioIO.h). If you do not wish to use audio i/o, then pass the flag
 
-You can get these through standard package managers on Linux, or through MacPorts or HomeBrew on OS X.
+	NO_AUDIO_IO=1
 
-2.4 Build issues
----
+into make or, if not using make, exclude src/AudioIO.cpp from your project.
 
-If you are having build issues (e.g. you want to use a Makefile but have used the Xcode generator, and cmake is giving you grief), running the `distclean` script will remove all Cmake cache and temporary files:
+libsndfile is required ONLY if you would like to use Gamma's SoundFile class (defined in Gamma/SoundFile.h).  If you do not wish to use sound file i/o, then pass the flag
 
-	./distclean
-	
-3. Easy building and running
-===
+	NO_SOUNDFILE=1
 
-The simplest way to run Gamma applications is using the included run script like this:
+into make or, if not using make, exclude src/SoundFile.cpp from your project.
 
-        ./run.sh path/to/source.cpp
-
-You can also build all the cpp files in a particular directory into a single application passing a directory name:
-
-        ./run.sh path/to/dir
-
-Running this script will build Gamma and the application, and will run it.
-
-4. Using the template
-===
-To build larger Gamma applications:
-
-1. Copy and rename the template/ directory
-2. Add source files to the CMakeLists.txt file there
-3. Make sure you have Gamma installed in your system or that it is inside the project directory along side it and that it has been built.
-4. Run cmake with the desired options inside the new project directory and build.
- 
