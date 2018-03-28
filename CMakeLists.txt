@@ -64,11 +64,11 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set_target_properties(Gamma
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/lib/Debug
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib/Release
 )
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
-set_target_properties(Gamma PROPERTIES DEBUG_POSTFIX _debug)
+# set_target_properties(Gamma PROPERTIES DEBUG_POSTFIX _debug)
 
 # TODO: allow choosing static or dynamic libraries
 
@@ -106,7 +106,7 @@ set(GAMMA_LINK_LIBRARIES
   # ${CMAKE_THREAD_LIBS_INIT}
 )
 
-target_link_libraries(Gamma  ${GAMMA_LINK_LIBRARIES})
+target_link_libraries(Gamma PUBLIC ${GAMMA_LINK_LIBRARIES})
 
 # set_target_properties(Gamma
 #   PROPERTIES
@@ -116,7 +116,7 @@ target_link_libraries(Gamma  ${GAMMA_LINK_LIBRARIES})
 #   PROPERTIES
 #   GAMMA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
 #   )
-target_include_directories(Gamma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SNDFILE_INCLUDE_DIRS})
+target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${SNDFILE_INCLUDE_DIRS})
 
 # Install target
 
