@@ -32,55 +32,61 @@ endif(NOT DEFINED BUILD_ROOT_DIR)
 
 # Gamma Library
 set(GAMMA_SRC
-  src/arr.cpp
-  # src/AudioIO.cpp
-  src/Conversion.cpp
-  src/DFT.cpp
-  src/Domain.cpp
-  src/FFT_fftpack.cpp
-  src/fftpack++1.cpp
-  src/fftpack++2.cpp
-  src/Print.cpp
-  src/scl.cpp
-  src/Recorder.cpp
-  src/Scheduler.cpp
-  src/SoundFile.cpp
-  src/Timer.cpp
-  src/fftpack++.h)
+  ${CMAKE_CURRENT_LIST_DIR}/src/arr.cpp
+  # ${CMAKE_CURRENT_LIST_DIR}/src/AudioIO.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Conversion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/DFT.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Domain.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/FFT_fftpack.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++1.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++2.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Print.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/scl.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Recorder.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Scheduler.cpp
+  # ${CMAKE_CURRENT_LIST_DIR}/src/SoundFile.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/Timer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++.h)
 
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} Gamma/*.h)
+# include_directories(${CMAKE_CURRENT_LIST_DIR})
+file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_LIST_DIR} Gamma/*.h)
 # Copy headers to build directory (only if header has changed)
 # foreach(header ${GAMMA_INSTALL_HEADERS})
 # 	execute_process(COMMAND ${CMAKE_COMMAND} -E
 # 					copy_if_different "${header}" "${BUILD_ROOT_DIR}/build/include/${header}"
-# 					WORKING_DIRECTORY  "${CMAKE_CURRENT_SOURCE_DIR}")
+# 					WORKING_DIRECTORY  "${CMAKE_CURRENT_LIST_DIR}")
 # endforeach()
-
-
-add_library(Gamma STATIC ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
-# set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-set_target_properties(Gamma
-    PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/lib/Debug
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib/Release
-)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
-# set_target_properties(Gamma PROPERTIES DEBUG_POSTFIX _debug)
-
-# TODO: allow choosing static or dynamic libraries
-
 
 # Dependencies
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake_modules")
 # find_package(Portaudio REQUIRED)
-find_package(LibSndFile REQUIRED)
+find_package(LibSndFile QUIET)
 find_package(Threads REQUIRED)
 # message(STATUS "Portaudio: ${PORTAUDIO_LIBRARY}  ${PORTAUDIO_DEFINITIONS}")
 message(STATUS "libsndfile: ${SNDFILE_LIBRARY}")
 message(STATUS "threading: ${CMAKE_THREAD_LIBS_INIT}")
+
+if (SNDFILE_FOUND)
+  # message("sndfile found")
+  list(APPEND GAMMA_SRC ${CMAKE_CURRENT_LIST_DIR}/src/SoundFile.cpp)
+else()
+  # message("sndfile not found")
+  list(REMOVE_ITEM GAMMA_INSTALL_HEADERS Gamma/SoundFile.h)
+endif()
+
+add_library(Gamma STATIC ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
+# set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
+# set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_LIST_DIR}/bin")
+set_target_properties(Gamma
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_LIST_DIR}/lib/Debug
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/lib/Release
+)
+# set_target_properties(Gamma PROPERTIES DEBUG_POSTFIX _debug)
+
+# TODO: allow choosing static or dynamic libraries
 
 # include_directories(${PORTAUDIO_INCLUDE_DIRS} ${SNDFILE_INCLUDE_DIRS})
 
@@ -98,25 +104,25 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set_target_properties(Gamma PROPERTIES COMPILE_FLAGS "-fPIC")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
-set(GAMMA_LINK_LIBRARIES
-  ${CMAKE_THREAD_LIBS_INIT}
-  # ${PORTAUDIO_LIBRARIES}
-  ${SNDFILE_LIBRARIES}
-  # ${PA_FRAMEWORKS}
-  # ${CMAKE_THREAD_LIBS_INIT}
-)
-
-target_link_libraries(Gamma PUBLIC ${GAMMA_LINK_LIBRARIES})
-
 # set_target_properties(Gamma
 #   PROPERTIES
 #   GAMMA_LINK_LIBRARIES "${GAMMA_LINK_LIBRARIES}"
 #   )
 # set_target_properties(Gamma
 #   PROPERTIES
-#   GAMMA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+#   GAMMA_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}
 #   )
-target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${SNDFILE_INCLUDE_DIRS})
+
+target_link_libraries(Gamma PUBLIC ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+
+if (SNDFILE_FOUND)
+  # message("sndfile found")
+  target_link_libraries(Gamma PUBLIC ${SNDFILE_LIBRARIES})
+  target_include_directories(Gamma PUBLIC ${SNDFILE_INCLUDE_DIRS})
+else()
+  # message("sndfile not found")
+endif()
 
 # Install target
 
@@ -127,7 +133,7 @@ target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${SNDFILE_INCL
 # if((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 #     set(BUILD_DIR ${GAMMA_BUILD_DIR})
 #     set(BUILD_APP_FILE ${GAMMA_BUILD_APP_FILE})
-#     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/CMakeRunTargets.cmake)
+#     include(${CMAKE_CURRENT_LIST_DIR}/cmake_modules/CMakeRunTargets.cmake)
 #     set(BUILD_EXAMPLES 0)
 # endif((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 
@@ -137,7 +143,7 @@ target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${SNDFILE_INCL
 #   set(EXAMPLE_DIRS algorithmic analysis curves effects envelope filter function io oscillator source spatial spectral synthesis synths techniques)
 #   foreach(dir ${EXAMPLE_DIRS})
 # 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin/examples/${dir}")
-# 	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "examples/${dir}/*.cpp")
+# 	file(GLOB EXAMPLE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "examples/${dir}/*.cpp")
 #     foreach(example ${EXAMPLE_FILES})
 #       get_filename_component(EXAMPLE_NAME ${example} NAME_WE) # Get name w/o extension
 #       if (ALLOSYSTEM_BUILD)
@@ -163,7 +169,7 @@ if (GAMMA_BUILD_TESTS)
   enable_testing()
 
   add_executable(gammaUnitTests tests/unitTests.cpp)
-  target_include_directories(gammaUnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(gammaUnitTests PRIVATE ${CMAKE_CURRENT_LIST_DIR})
   target_link_libraries(gammaUnitTests Gamma ${GAMMA_LINK_LIBRARIES})
   add_test(NAME gammaUnitTests
   	 COMMAND $<TARGET_FILE:gammaUnitTests> ${TEST_ARGS})

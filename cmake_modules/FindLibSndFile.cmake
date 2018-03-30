@@ -22,7 +22,6 @@ find_path(SNDFILE_INCLUDE_DIR
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-      "${CMAKE_CURRENT_SOURCE_DIR}/external/include"
 )
 
 # Finally the library itself
@@ -33,7 +32,6 @@ find_library(SNDFILE_LIBRARY
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-      "${CMAKE_CURRENT_SOURCE_DIR}/external/lib_win32"
 )
 
 # Set the include dir variables and the libraries and let libfind_process do the rest.
