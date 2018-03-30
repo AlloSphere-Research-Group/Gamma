@@ -159,10 +159,12 @@ target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${SNDFILE_INCL
 
 
 # Unit tests
-enable_testing()
+if (GAMMA_BUILD_TESTS)
+  enable_testing()
 
-add_executable(gammaUnitTests tests/unitTests.cpp)
-target_include_directories(gammaUnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(gammaUnitTests Gamma ${GAMMA_LINK_LIBRARIES})
-add_test(NAME gammaUnitTests
-	 COMMAND $<TARGET_FILE:gammaUnitTests> ${TEST_ARGS})
+  add_executable(gammaUnitTests tests/unitTests.cpp)
+  target_include_directories(gammaUnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(gammaUnitTests Gamma ${GAMMA_LINK_LIBRARIES})
+  add_test(NAME gammaUnitTests
+  	 COMMAND $<TARGET_FILE:gammaUnitTests> ${TEST_ARGS})
+endif()
