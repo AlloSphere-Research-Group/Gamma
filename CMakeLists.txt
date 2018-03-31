@@ -78,11 +78,11 @@ endif()
 add_library(Gamma STATIC ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
 # set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
 # set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_LIST_DIR}/bin")
-set_target_properties(Gamma
-    PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_LIST_DIR}/lib/Debug
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/lib/Release
+set_target_properties(Gamma PROPERTIES
+    DEBUG_POSTFIX d
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/lib
 )
 # set_target_properties(Gamma PROPERTIES DEBUG_POSTFIX _debug)
 
@@ -114,7 +114,11 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 #   )
 
 target_link_libraries(Gamma PUBLIC ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(Gamma PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(Gamma PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
+  "$<INSTALL_INTERFACE:include>"
+)
+
 
 if (SNDFILE_FOUND)
   # message("sndfile found")
@@ -174,3 +178,13 @@ if (GAMMA_BUILD_TESTS)
   add_test(NAME gammaUnitTests
   	 COMMAND $<TARGET_FILE:gammaUnitTests> ${TEST_ARGS})
 endif()
+
+install(TARGETS Gamma
+  EXPORT Gamma-targets
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+
+install(EXPORT Gamma-targets DESTINATION lib/cmake/Gamma)
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/Gamma DESTINATION include)
