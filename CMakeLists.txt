@@ -128,11 +128,6 @@ else()
   # message("sndfile not found")
 endif()
 
-# Install target
-
-# install(TARGETS Gamma DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-# install(FILES ${GAMMA_INSTALL_HEADERS} DESTINATION "${CMAKE_INSTALL_PREFIX}/include/Gamma")
-
 # Run from path
 # if((GAMMA_BUILD_DIR) OR (GAMMA_BUILD_APP_FILE))
 #     set(BUILD_DIR ${GAMMA_BUILD_DIR})
@@ -166,7 +161,6 @@ endif()
 #     endforeach(example)
 #   endforeach(dir)
 # endif(BUILD_EXAMPLES)
-
 
 # Unit tests
 if (GAMMA_BUILD_TESTS)
