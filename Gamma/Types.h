@@ -322,7 +322,6 @@ public:
 	}
 };
 
-
 template <unsigned N, class T, class S>
 inline Vec<N,T> operator + (const S& s, const Vec<N,T>& v){ return  v+s; }
 
@@ -346,6 +345,8 @@ template <unsigned N, class T, class U>
 inline Complex<U> operator + (const Complex<U>& c, const Vec<N,T>& v){
 	Complex<U> r; for(auto i:{0,1}) r[i] = c[i] + v[i]; return r;
 }
+
+#undef IT
 
 namespace scl{
 
