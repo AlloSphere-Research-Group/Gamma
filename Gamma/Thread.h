@@ -16,6 +16,7 @@
 	#include <pthread.h>
 #elif GAM_USE_WINTHREAD
 	#define WIN32_LEAN_AND_MEAN
+	#define NOMINMAX
 	#include <windows.h>
 	#ifdef far
 	#undef far

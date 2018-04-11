@@ -42,7 +42,7 @@
 
 	// System/Utility
 #ifndef GAMMA_H_NO_IO
-	#include "Gamma/AudioIO.h"
+	// #include "Gamma/AudioIO.h"
 #endif
 	#include "Gamma/Conversion.h"
 	#include "Gamma/Print.h"
@@ -59,10 +59,10 @@
 	#include "Gamma/FormantData.h"
 	#include "Gamma/Noise.h"
 	#include "Gamma/Oscillator.h"
-	#include "Gamma/SamplePlayer.h"
+	// #include "Gamma/SamplePlayer.h"
 	#include "Gamma/Spatial.h"
-	#include "Gamma/Recorder.h"
-	#include "Gamma/SoundFile.h"
+	// #include "Gamma/Recorder.h"
+	// #include "Gamma/SoundFile.h"
 	#include "Gamma/UnitMaps.h"
 
 	// Composite Objects
@@ -70,8 +70,8 @@
 	#include "Gamma/Effects.h"
 
 	// Scheduling/Timing
-	#include "Gamma/Scheduler.h"
-	#include "Gamma/Timer.h"
+	// #include "Gamma/Scheduler.h"
+	// #include "Gamma/Timer.h"
 
 #endif
 
