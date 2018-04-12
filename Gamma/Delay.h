@@ -89,7 +89,7 @@ public:
 	float maxDelay() const;						///< Get maximum delay length units
 
 	virtual void onResize() override;
-	void onDomainChange(double r);
+	void onDomainChange(double r) override;
 
 	void print();
 
