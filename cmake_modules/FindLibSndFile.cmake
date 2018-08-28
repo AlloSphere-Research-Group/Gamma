@@ -18,16 +18,18 @@ libfind_pkg_check_modules(SNDFILE_PKGCONF libsndfile)
 find_path(SNDFILE_INCLUDE_DIR
   NAMES sndfile.h
   PATHS ${SNDFILE_PKGCONF_INCLUDE_DIRS}
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
+      "C:/Program Files/Mega-Nerd/libsndfile/include"
+      /usr/include
+      /usr/local/include
+      /opt/local/include
+      /sw/include
 )
 
 # Finally the library itself
 find_library(SNDFILE_LIBRARY
   NAMES sndfile libsndfile libsndfile-1
   PATHS ${SNDFILE_PKGCONF_LIBRARY_DIRS}
+      "C:/Program Files/Mega-Nerd/libsndfile/lib"
       /usr/lib
       /usr/local/lib
       /opt/local/lib
@@ -38,4 +40,5 @@ find_library(SNDFILE_LIBRARY
 # NOTE: Singular variables for this library, plural for libraries this this lib depends on.
 set(SNDFILE_PROCESS_INCLUDES SNDFILE_INCLUDE_DIR)
 set(SNDFILE_PROCESS_LIBS SNDFILE_LIBRARY)
+
 libfind_process(SNDFILE)
