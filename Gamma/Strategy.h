@@ -4,11 +4,6 @@
 /*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information */
 
-// Function objects representing algorithms
-/// \defgroup Strategies Strategies
-
-// \defgroup ipl Interpolation
-
 #include "Gamma/Access.h"
 #include "Gamma/Containers.h"
 #include "Gamma/ipl.h"
@@ -16,16 +11,23 @@
 
 namespace gam{
 
+/// Function objects representing algorithms
+
+/// \defgroup Strategy
+
+// \defgroup ipl Interpolation
+
 /// Gamma supports several interpolation strategies.  These can be used, for example,
 /// to make a delay line whose delay amount is a non-integer number of samples.
 /// Julius Smith's <A HREF="https://ccrma.stanford.edu/~jos/pasp/Delay_Line_Interpolation.html">
 /// Delay-Line Interpolation page</A>
 /// \defgroup ipl Random-access Interpolation Strategies
+
 namespace ipl{
 
 /// Truncating random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Trunc{
 
@@ -60,7 +62,7 @@ struct Trunc{
 
 /// Nearest neighbor random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Round{
 
@@ -102,7 +104,7 @@ struct Round{
 
 /// This is equivalent to truncating interpolation with a 1-zero low-pass
 /// filter.
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Mean2{
 
@@ -137,7 +139,7 @@ struct Mean2{
 
 /// Linear random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Linear{
 
@@ -181,7 +183,7 @@ struct Linear{
 
 /// Cubic random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Cubic{
 
@@ -257,7 +259,7 @@ struct Cubic{
 
 /// Allpass random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct AllPass{
 
@@ -306,7 +308,7 @@ struct AllPass{
 
 /// Dynamically switchable random-access interpolation strategy
 
-/// \ingroup Strategies, ipl
+/// \ingroup Strategy, ipl
 template <class T>
 struct Switchable{
 
@@ -373,7 +375,7 @@ namespace iplSeq{
 
 	/// Base class for sequence interpolation strategies
 
-	/// \ingroup Strategies, iplSeq
+	/// \ingroup Strategy, iplSeq
 	template <unsigned N, class T>
 	struct Base{
 		Base(const T& v=0){ set(v); }
@@ -425,7 +427,7 @@ namespace iplSeq{
 
 	/// Linear sequence interpolation strategy
 
-	/// \ingroup Strategies, iplSeq
+	/// \ingroup Strategy, iplSeq
 	template <class T>
 	struct Linear : public Base<2,T>{
 		using Base<2,T>::v;
@@ -435,7 +437,7 @@ namespace iplSeq{
 
 	/// Cubic sequence interpolation strategy
 
-    /// \ingroup Strategies, iplSeq
+	/// \ingroup Strategy, iplSeq
 	template <class T>
 	struct Cubic : public Base<4,T>{
 		using Base<4,T>::v;
@@ -446,8 +448,8 @@ namespace iplSeq{
 	};
 
 	/// Cosine sequence interpolation strategy
-    
-	/// \ingroup Strategies, iplSeq
+
+	/// \ingroup Strategy, iplSeq
 	template <class T>
 	struct Cosine : public Base<2,T>{
 		using Base<2,T>::v;
@@ -481,12 +483,12 @@ namespace phsInc{
 
 	/// Loop waveform indefinitely.
 
-	/// \ingroup Strategies, phsInc
+	/// \ingroup Strategy, phsInc
 	struct Loop{
 		void reset(){}
 	
 		uint32_t operator()(uint32_t& pos, uint32_t inc){ return pos+=inc; }
-		bool done(uint32_t pos) const { return false; }
+		bool done(uint32_t /*pos*/) const { return false; }
 		
 		template <class T>
 		T operator()(T v, T inc, T max, T min){ return scl::wrap(v+inc, max, min); }
@@ -531,7 +533,7 @@ namespace phsInc{
 			return pos;
 		}
 
-		bool done(uint32_t pos) const { return false; }
+		bool done(uint32_t /*pos*/) const { return false; }
 
 	private:
 		uint32_t mPhase;
@@ -545,7 +547,7 @@ namespace phsInc{
 
 	/// Play waveform one cycle, then hold at the end. A one-shot.
 
-	/// \ingroup Strategies, phsInc
+	/// \ingroup Strategy, phsInc
 	struct OneShot{
 		void reset(){}
 	
@@ -572,7 +574,7 @@ namespace phsInc{
 
 	/// Repeat waveform a fixed number of times, then hold at the end.
 
-	/// \ingroup Strategies, phsInc
+	/// \ingroup Strategy, phsInc
 	struct NShot{
 		NShot(){ repeats(1); reset(); }
 		
@@ -611,7 +613,7 @@ namespace phsInc{
 
 	/// Play waveform forward, backwards, forward, etc.  Like Wrap, loops indefinitely.
 
-	/// \ingroup Strategies, phsInc
+	/// \ingroup Strategy, phsInc
 	struct PingPong{
 		PingPong(): dir(0){}
 	
@@ -624,7 +626,7 @@ namespace phsInc{
 			return pos;
 		}
 
-		bool done(uint32_t pos) const { return false; }
+		bool done(uint32_t /*pos*/) const { return false; }
 		
 		template <class T>
 		T operator()(T v, T inc, T max, T min){		
@@ -641,7 +643,7 @@ namespace phsInc{
 
 	/// Plays and holds waveform according to binary repeating pattern.
 
-	/// \ingroup Strategies, phsInc
+	/// \ingroup Strategy, phsInc
 	struct Rhythm{
 	
 		Rhythm(){
@@ -668,7 +670,7 @@ namespace phsInc{
 			return pos;
 		}
 
-		bool done(uint32_t pos) const { return false; }
+		bool done(uint32_t /*pos*/) const { return false; }
 		
 		Rhythm& pattern(uint64_t bits, uint8_t size){
 			mPattern=bits;
@@ -678,7 +680,7 @@ namespace phsInc{
 		
 		/// Specify on/off pattern as string, e.g., "/./....."
 		Rhythm& pattern(const char* bits, char offChar='.'){
-			mSize = strlen(bits);
+			mSize = uint8_t(strlen(bits));
 			mPattern = 0;
 			for(int i=0; i<mSize; ++i){
 				mPattern |= (bits[i]!=offChar) << (mSize-1-i);

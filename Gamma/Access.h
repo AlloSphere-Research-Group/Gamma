@@ -35,9 +35,9 @@ inline index_t posToInd(float v, index_t n){ return n * (v*0.49999f + 0.5f); }
 namespace acc{
 
 	struct None{
-		static index_t mapM1(index_t v, index_t mx, index_t mn){ return v; }
-		static index_t mapP1(index_t v, index_t mx, index_t mn){ return v; }
-		static index_t map  (index_t v, index_t mx, index_t mn){ return v; }
+		static index_t mapM1(index_t v, index_t /*mx*/, index_t /*mn*/){ return v; }
+		static index_t mapP1(index_t v, index_t /*mx*/, index_t /*mn*/){ return v; }
+		static index_t map  (index_t v, index_t /*mx*/, index_t /*mn*/){ return v; }
 	};
 
 	struct Wrap{
@@ -47,8 +47,8 @@ namespace acc{
 	};
 
 	struct Clip{
-		static index_t mapM1(index_t v, index_t mx, index_t mn){ return v>mn ? v : mn; }
-		static index_t mapP1(index_t v, index_t mx, index_t mn){ return v<mx ? v : mx; }
+		static index_t mapM1(index_t v, index_t /*mx*/, index_t mn){ return v>mn ? v : mn; }
+		static index_t mapP1(index_t v, index_t mx, index_t /*mn*/){ return v<mx ? v : mx; }
 		static index_t map  (index_t v, index_t mx, index_t mn){ return v>mn ? (v<mx ? v : mx) : mn; }
 	};
 
@@ -61,8 +61,8 @@ namespace acc{
 
 
 /// Maps a real number in [0, pmax) to an integer in [0, imax).
-    
-///\ingroup access    
+
+///\ingroup access
 template <class T>
 class IndexMap{
 

@@ -12,7 +12,7 @@
 namespace gam{
 
 /// Generator function objects
-    
+
 /// A generator is a lightweight object that generates a sequence of elements.
 /// Generators have a standard interface specified by the Val class. The array
 /// access operator, [], is overloaded so generators can be treated like
@@ -574,7 +574,7 @@ typedef CReson<double>	CResond;
 
 
 struct OnOff{
-	OnOff(unsigned max, unsigned ons) : max(max), ons(ons), cnt(0){}
+	OnOff(unsigned _max, unsigned _ons) : max(_max), ons(_ons), cnt(0){}
 
 	bool operator()(){
 		cnt++;
@@ -583,8 +583,8 @@ struct OnOff{
 		return ons >= max;
 	}
 
-	void set(unsigned max, unsigned ons, unsigned cnt){
-		this->max = max; this->ons = ons; this->cnt = cnt;
+	void set(unsigned _max, unsigned _ons, unsigned _cnt){
+		this->max = _max; this->ons = _ons; this->cnt = _cnt;
 	}
 
 	unsigned max, ons, cnt;
@@ -627,8 +627,7 @@ private:
 
 
 /// Triggers after a specified number of iterations and then resets.
-    
-    
+
 /// Outputs true on every nth sample and false on the rest.
 /// Argument "num" determines the length of the sequence.
 /// Argument "val", with a default value of zero can be set by the user

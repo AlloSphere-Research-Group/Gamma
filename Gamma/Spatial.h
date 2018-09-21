@@ -14,9 +14,12 @@
 #include "Gamma/Delay.h"
 #include "Gamma/Filter.h"
 
-/// \defgroup Spatial
 
 namespace gam{
+
+/// Simulate aspects of sound propagation through space
+
+/// \defgroup Spatial
 
 
 /// Gain loop filter (all-pass)
@@ -29,9 +32,14 @@ public:
 		mA0 = v;
 	}
 
+	void damping(float v){}
+
 	T operator()(T in){
 		return in*mA0;
 	}
+
+	/// Get filter gain
+	float gain() const { return mA0; }
 
 private:
 	float mA0=0.f;
@@ -235,6 +243,9 @@ template<
 class ReverbMS : public Td {
 public:
 
+	typedef std::vector<Echo<Tv, Si, LoopFilter, Domain1>> Combs;
+	typedef std::vector<Comb<Tv, Si, float, Domain1>> Allpasses;
+
 	ReverbMS();
 
 
@@ -275,12 +286,15 @@ public:
 	/// Get decay length
 	float decay() const { return mDecay; }
 
+	Combs& combs(){ return mCombs; }
+	Allpasses& allpasses(){ return mAllpasses; }
+
 	void print() const;
 
 private:
 	float mDecay;
-	std::vector<Echo<Tv, Si, LoopFilter, Domain1>> mCombs;
-	std::vector<Comb<Tv, Si, float, Domain1>> mAllpasses;
+	Combs mCombs;
+	Allpasses mAllpasses;
 
 	virtual void onDomainChange(double r){
 		decay(decay());
