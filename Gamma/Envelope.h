@@ -418,6 +418,10 @@ public:
 	/// Get amplitude
 	Tv amp() const { return this->levels()[1]; }
 
+	void triggerRelease() {
+		Env<3,Tv,Tp,Td>::release();
+	}
+
 protected:
 	ADSR& setLen(int i, Tp v){
 		this->lengths()[i] = v; return *this;
