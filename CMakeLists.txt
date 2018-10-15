@@ -32,21 +32,21 @@ endif(NOT DEFINED BUILD_ROOT_DIR)
 
 # Gamma Library
 set(GAMMA_SRC
-  ${CMAKE_CURRENT_LIST_DIR}/src/arr.cpp
-  # ${CMAKE_CURRENT_LIST_DIR}/src/AudioIO.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Conversion.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/DFT.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Domain.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/FFT_fftpack.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++1.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++2.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Print.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/scl.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Recorder.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Scheduler.cpp
-  # ${CMAKE_CURRENT_LIST_DIR}/src/SoundFile.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/Timer.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/fftpack++.h)
+  src/arr.cpp
+  # src/AudioIO.cpp
+  src/Conversion.cpp
+  src/DFT.cpp
+  src/Domain.cpp
+  src/FFT_fftpack.cpp
+  src/fftpack++1.cpp
+  src/fftpack++2.cpp
+  src/Print.cpp
+  src/scl.cpp
+  src/Recorder.cpp
+  src/Scheduler.cpp
+  # src/SoundFile.cpp
+  src/Timer.cpp
+  src/fftpack++.h)
 
 # include_directories(${CMAKE_CURRENT_LIST_DIR})
 file(GLOB GAMMA_INSTALL_HEADERS RELATIVE ${CMAKE_CURRENT_LIST_DIR} Gamma/*.h)
