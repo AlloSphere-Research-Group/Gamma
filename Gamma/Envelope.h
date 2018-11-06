@@ -364,7 +364,7 @@ protected:
 template <class Tv=real, class Tp=real, class Td=DomainObserver>
 class ADSR : public Env<3,Tv,Tp,Td>{
 public:
-	using Env<3,Tv,Tp,Td>::release;
+	// using Env<3,Tv,Tp,Td>::release;
 
 	/// \param[in] att	Attack length
 	/// \param[in] dec	Decay length
@@ -418,9 +418,7 @@ public:
 	/// Get amplitude
 	Tv amp() const { return this->levels()[1]; }
 
-	void triggerRelease() {
-		Env<3,Tv,Tp,Td>::release();
-	}
+	void triggerRelease() { Env<3,Tv,Tp,Td>::release(); }
 
 protected:
 	ADSR& setLen(int i, Tp v){
