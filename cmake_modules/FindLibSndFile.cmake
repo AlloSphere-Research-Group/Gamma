@@ -18,6 +18,7 @@ libfind_pkg_check_modules(SNDFILE_PKGCONF libsndfile)
 find_path(SNDFILE_INCLUDE_DIR
   NAMES sndfile.h
   PATHS ${SNDFILE_PKGCONF_INCLUDE_DIRS}
+      "C:/Program Files (x86)/Mega-Nerd/libsndfile/include"
       "C:/Program Files/Mega-Nerd/libsndfile/include"
       /usr/include
       /usr/local/include
@@ -29,6 +30,8 @@ find_path(SNDFILE_INCLUDE_DIR
 find_library(SNDFILE_LIBRARY
   NAMES sndfile libsndfile libsndfile-1
   PATHS ${SNDFILE_PKGCONF_LIBRARY_DIRS}
+      "C:/Program Files (x86)/Mega-Nerd/libsndfile/lib"
+      "C:/Program Files (x86)/Mega-Nerd/libsndfile/bin"
       "C:/Program Files/Mega-Nerd/libsndfile/lib"
       /usr/lib
       /usr/local/lib
