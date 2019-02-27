@@ -1,6 +1,8 @@
 /*	Gamma - Generic processing library
 	See COPYRIGHT file for authors and license information */
 
+#include <algorithm>
+
 #include "Gamma/DFT.h"
 #include "Gamma/arr.h"
 #include "Gamma/scl.h"
@@ -127,7 +129,7 @@ void DFT::inverse(float * dst){
 	// overlap-add inverse window with prev spill
 	if(sizePad() > 0){
 		// add spill from previous transform
-		arr::add(bufInvPos(), mPadOA, scl::min(sizePad(), sizeWin()));
+		arr::add(bufInvPos(), mPadOA, std::min(sizePad(), sizeWin()));
 
 		// no spill overlap
 		if(sizePad() <= sizeWin()){

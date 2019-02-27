@@ -11,21 +11,21 @@
 #include "Gamma/Config.h"
 
 // Define some standard C99 functions that Windows is too stubborn to support.
-// #if GAM_WINDOWS
-// 	// MS puts nextafter here instead of in math.h. Also, we must include
-// 	// float.h before math.h to avoid a problem with MinGW.
-// 	#include <float.h>
-// 	// Undefine macros in windows.h
-// 	#ifdef max
-// 	#undef max
-// 	#endif
-// 	#ifdef min
-// 	#undef min
-// 	#endif
-// 	float nextafterf(float x, float y); // Defined in scl.cpp
-// 	#define nextafter(x,y)	_nextafter(x,y)
-// 	#define nextafterl(x,y)	_nextafter(x,y)
-// #endif
+#if GAM_WINDOWS
+	// MS puts nextafter here instead of in math.h. Also, we must include
+	// float.h before math.h to avoid a problem with MinGW.
+	#include <float.h>
+	// Undefine macros in windows.h
+	#ifdef max
+	#undef max
+	#endif
+	#ifdef min
+	#undef min
+	#endif
+	// float nextafterf(float x, float y); // Defined in scl.cpp
+	// #define nextafter(x,y)	_nextafter(x,y)
+	// #define nextafterl(x,y)	_nextafter(x,y)
+#endif
 
 #include <cmath>
 #include "Gamma/Conversion.h"
@@ -48,15 +48,15 @@ template<class T> double normCompare(const T& v);
 /// Scalar rank functions for numerical types
 namespace scl{
 
-#define DEF(T)\
-inline T max(T v1, T v2){ return v1<v2?v2:v1; }\
-inline T min(T v1, T v2){ return v1<v2?v1:v2; }
-DEF(float) DEF(double)
-DEF(long long) DEF(unsigned long long)
-DEF(int) DEF(unsigned) 
-DEF(short) DEF(unsigned short)
-DEF(char) DEF(unsigned char)
-#undef DEF
+// #define DEF(T)\
+// inline T max(T v1, T v2){ return v1<v2?v2:v1; }\
+// inline T min(T v1, T v2){ return v1<v2?v1:v2; }
+// DEF(float) DEF(double)
+// DEF(long long) DEF(unsigned long long)
+// DEF(int) DEF(unsigned) 
+// DEF(short) DEF(unsigned short)
+// DEF(char) DEF(unsigned char)
+// #undef DEF
 
 /// Absolute value
 template<class T> T abs(T v){ return std::abs(v); }
