@@ -622,7 +622,7 @@ void Ring<T,A>::readFrom(T * dst, uint32_t len, int32_t delay, uint32_t from) co
 	// this ensures that we don't copy across the ring tap boundary
 	// we add one to maxLen because of a fence post anomaly
 	uint32_t maxLen = (begin < from ? (from - begin) : (from + (size() - begin))) + 1;
-	len = scl::min(len, maxLen);
+	len = std::min(len, maxLen);
 	
 	mem::copyFromRing(elems(), size(), begin, dst, len);
 }
