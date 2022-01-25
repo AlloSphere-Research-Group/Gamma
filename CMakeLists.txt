@@ -8,6 +8,8 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
+option(GAMMA_BUILD_SHARED "Build Gamma library as shared library" OFF)
+
 if ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
   if(NOT (COMPILER_SUPPORTS_CXX11 OR COMPILER_SUPPORTS_CXX0X))
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
@@ -75,7 +77,13 @@ else()
   list(REMOVE_ITEM GAMMA_INSTALL_HEADERS Gamma/SoundFile.h)
 endif()
 
-add_library(Gamma STATIC ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
+if (GAMMA_BUILD_SHARED)
+    set(GAMMA_LIB_TYPE "SHARED")
+else()
+    set(GAMMA_LIB_TYPE "STATIC")
+endif()
+
+add_library(Gamma ${GAMMA_LIB_TYPE} ${GAMMA_SRC} ${GAMMA_INSTALL_HEADERS})
 # set(LIBRARY_OUTPUT_PATH "${BUILD_ROOT_DIR}/build/lib")
 # set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_LIST_DIR}/bin")
 set_target_properties(Gamma PROPERTIES
